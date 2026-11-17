@@ -15,3 +15,12 @@
 .category,.confidence{font-size:9px;color:var(--muted)}
 @media(max-width:1000px){.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:540px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.filterline{align-items:stretch;flex-direction:column}.filterline select{width:100%}}
+
+.incidents-panel{margin-bottom:16px}
+.incidents-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.incident-item{border:1px solid var(--line);background:#0b1728;border-radius:10px;padding:12px;min-width:0}
+.incident-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.incident-head strong{font-size:12px}
+.incident-item p{font-size:12px;margin:8px 0;overflow-wrap:anywhere}
+.incident-item small{font-size:10px;color:var(--muted)}
+@media(max-width:650px){.incidents-list{grid-template-columns:1fr}}
