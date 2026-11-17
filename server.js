@@ -89,7 +89,7 @@ async function youtubeSearch() {
   url.searchParams.set("part", "snippet"); url.searchParams.set("type", "video");
   url.searchParams.set("order", "date"); url.searchParams.set("maxResults", "10");
   url.searchParams.set("q", 'apagão OR "sem internet" OR "queda de energia"');
-  url.searchParams.set("regionCode", "BR"); url.searchParams.set("relevanceLanguage", "pt"); url.searchParams.set("key", YOUTUBE_API_KEY);
+  url.searchParams.set("key", YOUTUBE_API_KEY);
   const data = await fetchJson(url);
   const posts = (data.items || []).map(item => ({ id: "youtube-" + item.id.videoId, source: "YouTube",
     text: (item.snippet?.title || "") + (item.snippet?.description ? " — " + item.snippet.description : ""),
