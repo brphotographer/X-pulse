@@ -190,7 +190,7 @@ async function awsStatusFeed() {
   const cached = officialCache.get("aws-status");
   if (cached && Date.now() - cached.at < 5 * 60 * 1000) return cached.posts;
   const xml = await fetchText("https://status.aws.amazon.com/rss/all.rss");
-  const blocks = xml.match(/<item\\b[\\s\\S]*?<\\/item>/gi) || [];
+  const blocks = xml.match(/<item\b[\s\S]*?<\/item>/gi) || [];
   const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const posts = blocks.map((block, i) => {
     const title = xmlTag(block, "title"), description = cleanHtml(xmlTag(block, "description"));
