@@ -90,13 +90,14 @@ function editorialReason(post,score){
   if(score>=85)return "Relato recente com sinais de relevância e possível repercussão";
   return "Relato público selecionado por atualidade e tema";
 }
+function priorityBand(score){return score>=115?"MUITO ALTA":score>=85?"ALTA":score>=55?"ACOMPANHAR":"CONTEXTO";}
 function renderTopStories(posts){
   const host=$("top-stories");if(!host)return;
   const groupCounts={};for(const p of posts){if(p.incident_group)groupCounts[p.incident_group]=(groupCounts[p.incident_group]||0)+1;}
   const ranked=posts.filter(p=>p.classification!=="ruido").map(p=>({...p,_score:relevanceScore(p,groupCounts)})).sort((a,b)=>b._score-a._score||String(b.created_at||"").localeCompare(String(a.created_at||"")));
   if(!ranked.length){host.innerHTML='<div class="empty">Nenhuma notícia relevante encontrada com os filtros atuais.</div>';return;}
   const lead=ranked[0],others=ranked.slice(1,4);
-  const card=(p,index,leadCard)=>'<article class="story-card '+(leadCard?"story-lead":"story-brief")+'"><div class="story-kicker"><span class="story-rank">'+(index===0?"DESTAQUE":"Nº "+(index+1))+'</span><span class="story-type '+esc(p.kind||"public_report")+'">'+esc(editorialSource(p))+'</span></div><h3>'+esc(String(p.text||"Informação sem título").slice(0,leadCard?260:180))+'</h3><p class="story-reason">'+esc(editorialReason(p,p._score))+'</p><div class="story-meta"><span>'+esc(p.source||"Fonte pública")+'</span><span>'+esc(p.created_at?new Date(p.created_at).toLocaleString(locale()):"Horário não informado")+'</span></div><div class="story-footer">'+badge(p.classification)+'<span class="story-score">RELEVÂNCIA '+p._score+'</span>'+(p.url?'<a href="'+esc(p.url)+'" target="_blank" rel="noopener noreferrer">Ler fonte original ↗</a>':"")+'</div></article>';
+  const card=(p,index,leadCard)=>'<article class="story-card '+(leadCard?"story-lead":"story-brief")+'"><div class="story-kicker"><span class="story-rank">'+(index===0?"DESTAQUE":"Nº "+(index+1))+'</span><span class="story-type '+esc(p.kind||"public_report")+'">'+esc(editorialSource(p))+'</span></div><h3>'+esc(String(p.text||"Informação sem título").slice(0,leadCard?260:180))+'</h3><p class="story-reason">'+esc(editorialReason(p,p._score))+'</p><div class="story-meta"><span>'+esc(p.source||"Fonte pública")+'</span><span>'+esc(p.created_at?new Date(p.created_at).toLocaleString(locale()):"Horário não informado")+'</span></div><div class="story-footer">'+badge(p.classification)+'<span class="story-score">PRIORIDADE '+priorityBand(p._score)+'</span>'+(p.url?'<a href="'+esc(p.url)+'" target="_blank" rel="noopener noreferrer">Ler fonte original ↗</a>':"")+'</div></article>';
   host.innerHTML='<div class="story-grid">'+card(lead,0,true)+'<div class="story-side">'+(others.length?others.map((p,i)=>card(p,i+1,false)).join(""):'<div class="empty">Aguardando novas atualizações das fontes.</div>')+'</div></div>';
 }
 function render(posts, incidents=allIncidents){
