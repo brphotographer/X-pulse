@@ -16,7 +16,7 @@ async function load(){
   try{
     const q=$("query").value.trim();const r=await fetch("/api/posts"+(q?"?q="+encodeURIComponent(q):""));const data=await r.json();if(!r.ok)throw new Error(data.error||"Erro na consulta");
     render(data.posts||[]);$("mode").textContent="MULTIRREDE";
-    const sourceSummary=Object.entries(data.sources||{}).map(([name,s])=>name+": "+s.count).join(" · ");
+    const sourceSummary=Object.entries(data.sources||{}).map(([name,s])=>name+": "+(s.status==="ok"?s.count+" publicações":s.status)).join(" · ");
     $("mode-note").textContent=sourceSummary||data.note||"Fontes públicas";
     $("connection").textContent=data.warning?"FONTES PARCIALMENTE DISPONÍVEIS":"FONTES PÚBLICAS CONECTADAS";
     $("updated").textContent="Atualizado às "+new Date().toLocaleTimeString("pt-BR");
