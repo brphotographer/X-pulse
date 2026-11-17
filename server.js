@@ -14,6 +14,10 @@ const MIME = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=u
 let cache = { key: "", at: 0, value: null };
 let youtubeCache = { at: 0, posts: [] };
 let cloudflareCache = { at: 0, posts: [] };
+let gdeltCache = { at: 0, posts: [] };
+let nwsCache = { at: 0, posts: [] };
+let usgsCache = { at: 0, posts: [] };
+let officialCache = new Map();
 
 function send(res, status, data, type="application/json; charset=utf-8") {
   res.writeHead(status, { "Content-Type": type, "Access-Control-Allow-Origin": "*" });
@@ -124,6 +128,143 @@ async function cloudflareOutages() {
   return posts;
 }
 
+
+const STATUS_PAGES = [
+  { name: "Cloudflare Status", host: "www.cloudflarestatus.com" },
+  { name: "GitHub Status", host: "www.githubstatus.com" },
+  { name: "Fastly Status", host: "status.fastly.com" },
+  { name: "DigitalOcean Status", host: "status.digitalocean.com" },
+  { name: "Atlassian Status", host: "status.atlassian.com" },
+  { name: "OpenAI Status", host: "status.openai.com" },
+  { name: "Discord Status", host: "discordstatus.com" },
+  { name: "Zoom Status", host: "status.zoom.us" },
+  { name: "Stripe Status", host: "status.stripe.com" },
+  { name: "Twilio Status", host: "status.twilio.com" },
+  { name: "npm Status", host: "status.npmjs.org" },
+  { name: "GitLab Status", host: "status.gitlab.com" }
+];
+async function statusPageIncidents(page) {
+  const cached = officialCache.get(page.host);
+  if (cached && Date.now() - cached.at < 5 * 60 * 1000) return cached.posts;
+  const url = "https://" + page.host + "/api/v2/incidents/unresolved.json";
+  const data = await fetchJson(url);
+  const posts = (data.incidents || []).map(item => {
+    const components = (item.components || []).map(x => x.name).filter(Boolean);
+    const updates = (item.incident_updates || []).slice(0, 2).map(x => cleanHtml(x.body || "")).filter(Boolean);
+    const impact = item.impact || "unknown";
+    return {
+      id: "status-" + page.host + "-" + item.id, source: page.name,
+      text: [item.name, "Impacto: " + impact, "Status: " + (item.status || "indefinido"), components.length ? "Componentes: " + components.join(", ") : "", updates.join(" — ")].filter(Boolean).join(" — ").slice(0, 1000),
+      created_at: item.created_at || item.updated_at || null, lang: "en", author: "Status oficial do provedor",
+      url: item.shortlink || ("https://" + page.host), kind: "official_status", impact,
+      public_metrics: { like_count: 0, retweet_count: 0, reply_count: 0 }
+    };
+  });
+  officialCache.set(page.host, { at: Date.now(), posts });
+  return posts;
+}
+async function googleCloudIncidents() {
+  const cached = officialCache.get("google-cloud");
+  if (cached && Date.now() - cached.at < 5 * 60 * 1000) return cached.posts;
+  const data = await fetchJson("https://status.cloud.google.com/incidents.json");
+  const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const posts = (Array.isArray(data) ? data : []).filter(item => {
+    const started = Date.parse(item.begin || item.created || "");
+    return !Number.isFinite(started) || started >= cutoff;
+  }).slice(0, 30).map(item => {
+    const updates = (item.updates || []).slice(0, 2).map(x => cleanHtml(x.text || x.description || "")).filter(Boolean);
+    const services = (item.affected_products || []).map(x => x.title || x.name).filter(Boolean);
+    return {
+      id: "gcp-" + item.id, source: "Google Cloud Status",
+      text: [item.external_desc || item.title || "Incidente publicado pelo Google Cloud", services.length ? "Serviços: " + services.join(", ") : "", updates.join(" — ")].filter(Boolean).join(" — ").slice(0, 1000),
+      created_at: item.begin || item.created || null, lang: "en", author: "Status oficial do Google Cloud",
+      url: item.uri ? (String(item.uri).startsWith("http") ? item.uri : "https://status.cloud.google.com" + item.uri) : "https://status.cloud.google.com/",
+      kind: "official_status", impact: item.severity || "unknown",
+      public_metrics: { like_count: 0, retweet_count: 0, reply_count: 0 }
+    };
+  });
+  officialCache.set("google-cloud", { at: Date.now(), posts });
+  return posts;
+}
+async function awsStatusFeed() {
+  const cached = officialCache.get("aws-status");
+  if (cached && Date.now() - cached.at < 5 * 60 * 1000) return cached.posts;
+  const xml = await fetchText("https://status.aws.amazon.com/rss/all.rss");
+  const blocks = xml.match(/<item\\b[\\s\\S]*?<\\/item>/gi) || [];
+  const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const posts = blocks.map((block, i) => {
+    const title = xmlTag(block, "title"), description = cleanHtml(xmlTag(block, "description"));
+    const link = xmlTag(block, "link"), published = xmlTag(block, "pubDate");
+    return { id: "aws-status-" + (link || i), source: "AWS Health Status",
+      text: [title, description].filter(Boolean).join(" — ").slice(0, 1000),
+      created_at: published ? new Date(published).toISOString() : null, lang: "en",
+      author: "Status oficial da AWS", url: link || "https://health.aws.amazon.com/health/status",
+      kind: "official_status", impact: "unknown",
+      public_metrics: { like_count: 0, retweet_count: 0, reply_count: 0 } };
+  }).filter(p => p.text && (!p.created_at || Date.parse(p.created_at) >= cutoff)).slice(0, 25);
+  officialCache.set("aws-status", { at: Date.now(), posts });
+  return posts;
+}
+async function gdeltNews() {
+  if (gdeltCache.posts.length && Date.now() - gdeltCache.at < 15 * 60 * 1000) return gdeltCache.posts;
+  const url = new URL("https://api.gdeltproject.org/api/v2/doc/doc");
+  url.searchParams.set("query", '(outage OR blackout OR "power failure" OR "internet disruption" OR "service disruption" OR "telecom outage" OR "cloud outage" OR "grid failure")');
+  url.searchParams.set("mode", "ArtList"); url.searchParams.set("format", "json");
+  url.searchParams.set("maxrecords", "30"); url.searchParams.set("sort", "DateDesc");
+  url.searchParams.set("timespan", "24h");
+  const data = await fetchJson(url.toString());
+  const posts = (data.articles || []).map(item => ({
+    id: "gdelt-" + (item.url || item.url_mobile || item.title),
+    source: "GDELT · Notícias globais",
+    text: [item.title, item.domain ? "Veículo: " + item.domain : "", item.sourcecountry ? "País da fonte: " + item.sourcecountry : ""].filter(Boolean).join(" — "),
+    created_at: item.seendate ? (item.seendate.length === 16 ? item.seendate.slice(0,4)+"-"+item.seendate.slice(4,6)+"-"+item.seendate.slice(6,8)+"T"+item.seendate.slice(9,11)+":"+item.seendate.slice(11,13)+":"+item.seendate.slice(13,15)+"Z" : null) : null,
+    lang: item.language || "und", author: item.domain || "Veículo de notícias",
+    url: item.url || item.url_mobile || "https://www.gdeltproject.org/", kind: "news_signal",
+    public_metrics: { like_count: 0, retweet_count: 0, reply_count: 0 }
+  })).filter(p => p.text && p.url);
+  gdeltCache = { at: Date.now(), posts };
+  return posts;
+}
+async function nwsAlerts() {
+  if (nwsCache.posts.length && Date.now() - nwsCache.at < 3 * 60 * 1000) return nwsCache.posts;
+  const response = await fetch("https://api.weather.gov/alerts/active?status=actual&limit=30", {
+    headers: { "Accept": "application/geo+json", "User-Agent": "XPulsePublicMonitor/1.0 (public infrastructure awareness)" },
+    signal: AbortSignal.timeout(12000)
+  });
+  if (!response.ok) throw new Error("NWS Alerts HTTP " + response.status);
+  const data = await response.json();
+  const posts = (data.features || []).slice(0, 30).map(feature => {
+    const p = feature.properties || {};
+    return {
+      id: "nws-" + (p.id || feature.id), source: "NWS · Alertas oficiais (EUA)",
+      text: [p.event, p.areaDesc, p.severity ? "Severidade: " + p.severity : "", p.headline, p.description].filter(Boolean).join(" — ").slice(0, 1000),
+      created_at: p.sent || p.effective || null, lang: "en", author: p.senderName || "National Weather Service",
+      url: p.web || p["@id"] || "https://www.weather.gov/alerts", kind: "context_signal", context_type: "weather_alert",
+      public_metrics: { like_count: 0, retweet_count: 0, reply_count: 0 }
+    };
+  }).filter(p => p.text);
+  nwsCache = { at: Date.now(), posts };
+  return posts;
+}
+async function usgsEarthquakes() {
+  if (usgsCache.posts.length && Date.now() - usgsCache.at < 5 * 60 * 1000) return usgsCache.posts;
+  const data = await fetchJson("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson");
+  const posts = (data.features || []).map(feature => {
+    const p = feature.properties || {}, coords = feature.geometry?.coordinates || [];
+    return {
+      id: "usgs-" + feature.id, source: "USGS · Terremotos globais",
+      text: ["Terremoto magnitude " + p.mag, p.place, "Profundidade: " + (coords[2] ?? "n/d") + " km"].filter(Boolean).join(" — "),
+      created_at: p.time ? new Date(p.time).toISOString() : null, lang: "en",
+      author: "U.S. Geological Survey", url: p.url || "https://earthquake.usgs.gov/earthquakes/map/",
+      kind: "context_signal", context_type: "earthquake",
+      coordinates: coords.length >= 2 ? { lat: coords[1], lon: coords[0] } : null,
+      public_metrics: { like_count: 0, retweet_count: 0, reply_count: 0 }
+    };
+  });
+  usgsCache = { at: Date.now(), posts };
+  return posts;
+}
+
 const EVENT_WORDS = /\b(outage|blackout|blackout|power cut|power outage|internet down|internet outage|service disruption|service down|downtime|failed|failure|crash|offline|apag[oã]o|corte de luz|queda de energia|sem energia|sem internet|ca[ií]da|falha|interrup[cç][aã]o|stromausfall|panne|coupure|apag[oó]n|corte el[eé]ctrico|ca[ií]da de internet|停電|障害)\b/i;
 const DIGITAL_WORDS = /\b(bank|banking|chase|visa|mastercard|paypal|payment|payments|aws|azure|cloudflare|microsoft 365|office 365|google cloud|gmail|outlook|facebook|instagram|whatsapp|telegram|youtube|netflix|spotify|github|discord|united airlines|airline|airlines|telecom|carrier|mobile network|cellular|banco|bancos|pagamento|nuvem|servicio digital|servicio bancario)\b/i;
 const POWER_WORDS = /\b(power|electric|electricity|grid|energy|substation|transformer|luz|energia|el[eé]ctrica|rede el[eé]trica|strom|elektrizit[aä]t|electricidad|energ[ií]a|停電)\b/i;
@@ -134,14 +275,20 @@ const NOISE_WORDS = /\b(song lyrics|letra de la canci[oó]n|music video|what is 
 function classifyPost(post) {
   const text = String(post.text || "");
   const isTechnical = post.kind === "technical_signal" || post.source === "Cloudflare Radar";
+  const isOfficial = post.kind === "official_status";
+  const isContext = post.kind === "context_signal";
+  const isNews = post.kind === "news_signal";
   let category = "infraestrutura";
   if (CYBER_WORDS.test(text)) category = "ciberseguranca";
   else if (DIGITAL_WORDS.test(text) && !POWER_WORDS.test(text)) category = "servicos_digitais";
   else if (POWER_WORDS.test(text)) category = "energia";
   else if (/internet|broadband|wifi|wi-fi|fiber|fibra|connectivity|conectividade|network|rede|telecom/i.test(text)) category = "conectividade";
   let status = "em_verificacao";
-  let confidence = isTechnical ? "alta" : "baixa";
-  if (NOISE_WORDS.test(text) && !EVENT_WORDS.test(text)) { status = "ruido"; confidence = "baixa"; }
+  let confidence = (isTechnical || isOfficial) ? "alta" : "baixa";
+  if (isOfficial) { status = "sinal_tecnico"; confidence = "alta"; }
+  else if (isContext) { status = "em_verificacao"; confidence = "media"; }
+  else if (isNews && EVENT_WORDS.test(text)) { status = "em_verificacao"; confidence = "media"; }
+  else if (NOISE_WORDS.test(text) && !EVENT_WORDS.test(text)) { status = "ruido"; confidence = "baixa"; }
   else if (RUMOR_WORDS.test(text)) { status = "rumor"; confidence = "baixa"; }
   else if (SCHEDULED_WORDS.test(text)) { status = "programado"; confidence = "media"; }
   else if (isTechnical) { status = "sinal_tecnico"; confidence = "alta"; }
@@ -191,7 +338,16 @@ async function getPosts(term) {
   const redditTerms = custom ? [custom] : ['"power outage" OR "internet outage"', '"bank outage" OR "payment outage"', '"cloud outage" OR "service outage"', '"telecom outage" OR "mobile network down"', '"cyber incident" OR ransomware', "blackout", '"corte de luz" OR "caída de internet" OR apagón', '"panne internet" OR stromausfall', '"停電" OR "ネット障害"'];
   const sources = {
     Bluesky: { status: "consultando", count: 0 }, Mastodon: { status: "consultando", count: 0 },
-    Reddit: { status: "consultando", count: 0 },
+    Reddit: { status: "consultando", count: 0 }, "GDELT · Notícias globais": { status: "consultando", count: 0 },
+    "NWS · Alertas oficiais (EUA)": { status: "consultando", count: 0 },
+    "USGS · Terremotos globais": { status: "consultando", count: 0 },
+    "AWS Health Status": { status: "consultando", count: 0 }, "Google Cloud Status": { status: "consultando", count: 0 },
+    "Cloudflare Status": { status: "consultando", count: 0 }, "GitHub Status": { status: "consultando", count: 0 },
+    "Fastly Status": { status: "consultando", count: 0 }, "DigitalOcean Status": { status: "consultando", count: 0 },
+    "Atlassian Status": { status: "consultando", count: 0 }, "OpenAI Status": { status: "consultando", count: 0 },
+    "Discord Status": { status: "consultando", count: 0 }, "Zoom Status": { status: "consultando", count: 0 },
+    "Stripe Status": { status: "consultando", count: 0 }, "Twilio Status": { status: "consultando", count: 0 },
+    "npm Status": { status: "consultando", count: 0 }, "GitLab Status": { status: "consultando", count: 0 },
     "Cloudflare Radar": { status: CLOUDFLARE_API_TOKEN ? "consultando" : "aguardando token opcional", count: 0 },
     YouTube: { status: YOUTUBE_API_KEY ? "consultando" : "aguardando chave de API", count: 0 }
   };
@@ -199,17 +355,22 @@ async function getPosts(term) {
     ...blueskyTerms.map(term => blueskySearch(term).then(posts => ({ source: "Bluesky", posts }))),
     ...mastodonTags.map(tag => mastodonTag(tag).then(posts => ({ source: "Mastodon", posts }))),
     ...redditTerms.map(term => redditSearch(term).then(posts => ({ source: "Reddit", posts }))),
+    gdeltNews().then(posts => ({ source: "GDELT · Notícias globais", posts })),
+    nwsAlerts().then(posts => ({ source: "NWS · Alertas oficiais (EUA)", posts })),
+    usgsEarthquakes().then(posts => ({ source: "USGS · Terremotos globais", posts })),
+    awsStatusFeed().then(posts => ({ source: "AWS Health Status", posts })),
+    googleCloudIncidents().then(posts => ({ source: "Google Cloud Status", posts })),
+    ...STATUS_PAGES.map(page => statusPageIncidents(page).then(posts => ({ source: page.name, posts }))),
     ...(YOUTUBE_API_KEY ? [youtubeSearch().then(posts => ({ source: "YouTube", posts }))] : []),
     ...(CLOUDFLARE_API_TOKEN ? [cloudflareOutages().then(posts => ({ source: "Cloudflare Radar", posts }))] : [])
   ];
   const settled = await Promise.allSettled(jobs), posts = [], errors = [];
   for (const result of settled) {
     if (result.status === "fulfilled") {
-      posts.push(...result.value.posts); sources[result.value.source].count += result.value.posts.length;
+      posts.push(...result.value.posts); sources[result.value.source].count += result.value.posts.length; sources[result.value.source].status = "ok";
     } else errors.push(result.reason?.message || "Falha na fonte");
   }
-  for (const name of ["Bluesky", "Mastodon", "Reddit", "Cloudflare Radar"]) if (!sources[name].count && sources[name].status === "consultando") sources[name].status = "sem resultados ou indisponível";
-  for (const name of ["Bluesky", "Mastodon", "Reddit", "Cloudflare Radar"]) if (sources[name].count) sources[name].status = "ok";
+  for (const [name, source] of Object.entries(sources)) if (source.status === "consultando") source.status = "sem resultados ou indisponível";
   if (sources.YouTube.count) sources.YouTube.status = "ok";
   else if (YOUTUBE_API_KEY) sources.YouTube.status = "sem resultados ou indisponível";
   const unique = [...new Map(posts.filter(p => p.text).map(p => [p.id, p])).values()]
@@ -226,13 +387,13 @@ async function getPosts(term) {
       ruido: unique.filter(p=>p.classification==="ruido").length
     }, sources,
     warning: errors.length ? "Algumas consultas falharam. As fontes disponíveis continuam sendo exibidas." : "",
-    note: "Monitoramento global experimental. Apenas conteúdo público e sinais técnicos disponíveis; YouTube e Cloudflare Radar exigem credenciais próprias. A cobertura varia por país, idioma e fonte.",
+    note: "Monitoramento global experimental com redes sociais públicas, notícias GDELT, páginas oficiais de status e alertas contextuais. YouTube e Cloudflare Radar exigem credenciais próprias. Alertas meteorológicos e terremotos são contexto, não confirmação de falha de serviço.",
     updated_at: new Date().toISOString() };
   cache = { key: cacheKey, at: Date.now(), value }; return value;
 }
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
-  if (url.pathname === "/api/health") return send(res, 200, { ok: true, service: "X PULSE", sources: ["Bluesky", "Mastodon", "Reddit", "YouTube", "Cloudflare Radar"] });
+  if (url.pathname === "/api/health") return send(res, 200, { ok: true, service: "X PULSE", sources: ["Bluesky", "Mastodon", "Reddit", "GDELT", "NWS", "USGS", "AWS", "Google Cloud", "Cloudflare Status", "GitHub Status", "Fastly", "DigitalOcean", "Atlassian", "OpenAI", "Discord", "Zoom", "Stripe", "Twilio", "npm", "GitLab", "YouTube", "Cloudflare Radar"] });
   if (url.pathname === "/api/posts") {
     try { return send(res, 200, await getPosts(url.searchParams.get("q"))); }
     catch (e) { return send(res, 502, { error: e.message || "Falha ao consultar fontes públicas" }); }
