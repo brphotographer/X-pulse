@@ -124,13 +124,13 @@ async function cloudflareOutages() {
   return posts;
 }
 
-const EVENT_WORDS = /\\b(outage|blackout|blackout|power cut|power outage|internet down|internet outage|service disruption|service down|downtime|failed|failure|crash|offline|apag[oã]o|corte de luz|queda de energia|sem energia|sem internet|ca[ií]da|falha|interrup[cç][aã]o|stromausfall|panne|coupure|apag[oó]n|corte el[eé]ctrico|ca[ií]da de internet|停電|障害)\\b/i;
-const DIGITAL_WORDS = /\\b(bank|banking|chase|visa|mastercard|paypal|payment|payments|aws|azure|cloudflare|microsoft 365|office 365|google cloud|gmail|outlook|facebook|instagram|whatsapp|telegram|youtube|netflix|spotify|github|discord|united airlines|airline|airlines|telecom|carrier|mobile network|cellular|banco|bancos|pagamento|nuvem|servicio digital|servicio bancario)\\b/i;
-const POWER_WORDS = /\\b(power|electric|electricity|grid|energy|substation|transformer|luz|energia|el[eé]ctrica|rede el[eé]trica|strom|elektrizit[aä]t|electricidad|energ[ií]a|停電)\\b/i;
-const CYBER_WORDS = /\\b(cyber.?attack|ransomware|cyber incident|hack(ed|ing)?|ddos|malware|ataque cibern[eé]tico|incidente cibern[eé]tico|ataque inform[aá]tico)\\b/i;
-const SCHEDULED_WORDS = /\\b(scheduled|planned|maintenance|programmed|corte programado|interrupci[oó]n programada|mantenimiento|programado|planificado|wartung|geplant)\\b/i;
-const RUMOR_WORDS = /\\b(rumou?r|hoax|fake|unverified|supposed|alleged|ap[oó]calipse|apag[oó]n mundial|worldwide blackout|global blackout|conspiracy|rumor|supuesto|suposta|desinformaci[oó]n)\\b/i;
-const NOISE_WORDS = /\\b(song lyrics|letra de la canci[oó]n|music video|what is a blackout|what is blackout|how does|explainer|guide to|article about|tariff|rates|price|precios|tarifas|börse|energiewende)\\b/i;
+const EVENT_WORDS = /\b(outage|blackout|blackout|power cut|power outage|internet down|internet outage|service disruption|service down|downtime|failed|failure|crash|offline|apag[oã]o|corte de luz|queda de energia|sem energia|sem internet|ca[ií]da|falha|interrup[cç][aã]o|stromausfall|panne|coupure|apag[oó]n|corte el[eé]ctrico|ca[ií]da de internet|停電|障害)\b/i;
+const DIGITAL_WORDS = /\b(bank|banking|chase|visa|mastercard|paypal|payment|payments|aws|azure|cloudflare|microsoft 365|office 365|google cloud|gmail|outlook|facebook|instagram|whatsapp|telegram|youtube|netflix|spotify|github|discord|united airlines|airline|airlines|telecom|carrier|mobile network|cellular|banco|bancos|pagamento|nuvem|servicio digital|servicio bancario)\b/i;
+const POWER_WORDS = /\b(power|electric|electricity|grid|energy|substation|transformer|luz|energia|el[eé]ctrica|rede el[eé]trica|strom|elektrizit[aä]t|electricidad|energ[ií]a|停電)\b/i;
+const CYBER_WORDS = /\b(cyber.?attack|ransomware|cyber incident|hack(ed|ing)?|ddos|malware|ataque cibern[eé]tico|incidente cibern[eé]tico|ataque inform[aá]tico)\b/i;
+const SCHEDULED_WORDS = /\b(scheduled|planned|maintenance|programmed|corte programado|interrupci[oó]n programada|mantenimiento|programado|planificado|wartung|geplant)\b/i;
+const RUMOR_WORDS = /\b(rumou?r|hoax|fake|unverified|supposed|alleged|ap[oó]calipse|apag[oó]n mundial|worldwide blackout|global blackout|conspiracy|rumor|supuesto|suposta|desinformaci[oó]n)\b/i;
+const NOISE_WORDS = /\b(song lyrics|letra de la canci[oó]n|music video|what is a blackout|what is blackout|how does|explainer|guide to|article about|tariff|rates|price|precios|tarifas|börse|energiewende)\b/i;
 function classifyPost(post) {
   const text = String(post.text || "");
   const isTechnical = post.kind === "technical_signal" || post.source === "Cloudflare Radar";
@@ -151,7 +151,7 @@ function classifyPost(post) {
 }
 function tokensFor(post) {
   const stop = new Set(["the","and","for","with","that","this","from","have","has","was","were","are","its","after","before","una","uno","los","las","del","por","con","que","una","para","das","der","die","und","von","bei","em","uma","uns","dos","das","com","sobre","após","mais","sem","the"]);
-  return new Set(String(post.text || "").toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").replace(/https?:\\/\\/\\S+/g," ").replace(/[@#][\\w.-]+/g," ").replace(/[^a-z0-9\\s]/g," ").split(/\\s+/).filter(w=>w.length>2&&!stop.has(w)));
+  return new Set(String(post.text || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/https?:\/\/\S+/g," ").replace(/[@#][\w.-]+/g," ").replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(w=>w.length>2&&!stop.has(w)));
 }
 function groupIncidents(posts) {
   const candidates = posts.filter(p => p.classification !== "ruido");
