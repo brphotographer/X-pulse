@@ -170,7 +170,7 @@ async function googleCloudIncidents() {
   const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const posts = (Array.isArray(data) ? data : []).filter(item => {
     const started = Date.parse(item.begin || item.created || "");
-    return !Number.isFinite(started) || started >= cutoff;
+    return (!Number.isFinite(started) || started >= cutoff) && !item.end;
   }).slice(0, 30).map(item => {
     const updates = (item.updates || []).slice(0, 2).map(x => cleanHtml(x.text || x.description || "")).filter(Boolean);
     const services = (item.affected_products || []).map(x => x.title || x.name).filter(Boolean);
