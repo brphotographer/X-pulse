@@ -76,3 +76,16 @@
 .date-presets button:hover{border-color:var(--cyan);color:var(--cyan)}
 .date-presets button.active{background:#16404a;border-color:var(--cyan);color:#a4fff0;box-shadow:inset 0 0 0 1px rgba(92,225,230,.12)}
 @media(max-width:540px){.date-presets{gap:6px}.date-presets button{flex:1;min-width:65px;padding:8px 7px}}
+
+.language-control{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:9px;letter-spacing:1px;font-weight:800}
+.language-control select{max-width:120px;background:#0b1a2b;border:1px solid #30445e;border-radius:7px;color:var(--text);padding:7px 8px;font:inherit;letter-spacing:0}
+@media(max-width:680px){.topbar{height:auto;min-height:76px;gap:8px}.top-status{gap:7px;flex-wrap:wrap;justify-content:flex-end}.language-control{width:100%;justify-content:flex-end}.language-control select{max-width:140px}}
+#map{height:440px;background:#071321;border-radius:10px;overflow:hidden}
+.leaflet-container{background:#071321;color:#edf4ff}
+.map-legend{position:absolute;z-index:650;left:12px;bottom:12px;display:flex;gap:9px;flex-wrap:wrap;padding:8px 10px;background:rgba(5,17,29,.9);border:1px solid #2b455a;border-radius:8px;color:#d2e1ef;font-size:9px;pointer-events:none}
+.map-legend span{display:flex;align-items:center;gap:5px}.map-legend i{display:inline-block;width:9px;height:9px;border-radius:2px}.map-legend .l-low{background:#36b8a0}.map-legend .l-mid{background:#ffad52}.map-legend .l-high{background:#ff5b68}
+.map-fallback{position:absolute;z-index:700;inset:12px 12px auto;padding:10px;border-radius:8px;background:#3b2630;color:#ffd8dd;font-size:11px}
+.leaflet-tooltip{background:#102239;border:1px solid #42617c;color:#edf4ff;box-shadow:0 4px 18px #0008}.leaflet-tooltip:before{border-top-color:#42617c}
+.translate-button{border:1px solid #31516c;background:#10243a;color:#9eece8;border-radius:7px;padding:5px 9px;margin:3px 0 8px;font-size:10px;cursor:pointer}
+.translate-button:hover{border-color:var(--cyan)}.translate-button:disabled{opacity:.6;cursor:wait}
+.translated-text{padding:9px 11px;border-left:2px solid var(--cyan);background:#10243a;border-radius:0 7px 7px 0;color:#e1f2ff;white-space:pre-wrap}
