@@ -1,11 +1,22 @@
 const $ = (id) => document.getElementById(id);
-let map, markers, allPosts = [], allIncidents = [], activeFilter = "todos";
+let map, markers, allPosts = [], allIncidents = [], activeFilter = "todos", activeStartDate = "", activeEndDate = "";
 const labels = { em_verificacao:"Em verificação", sinal_tecnico:"Sinal técnico", programado:"Programado", rumor:"Rumor / não confirmado", ruido:"Fora do escopo" };
 const categories = { energia:"Energia", conectividade:"Conectividade", servicos_digitais:"Serviços digitais", ciberseguranca:"Cibersegurança", infraestrutura:"Infraestrutura" };
 function initMap(){
   if(!window.L)return;
   map=L.map("map",{worldCopyJump:true,zoomControl:true}).setView([20,0],2);
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:"abcd",maxZoom:19}).addTo(map);
+  const cartoTiles=L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:"abcd",maxZoom:19});
+  const osmFallback=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:'&copy; OpenStreetMap contributors',maxZoom:19});
+  let tileErrors=0, usingFallback=false;
+  cartoTiles.on("tileerror",()=>{
+    tileErrors++;
+    if(tileErrors>=4&&!usingFallback){
+      usingFallback=true;map.removeLayer(cartoTiles);osmFallback.addTo(map);
+      const note=document.querySelector(".map-panel .map-note");
+      if(note)note.textContent="Mapa alternativo OpenStreetMap ativo. Nenhuma chave de API é necessária.";
+    }
+  });
+  cartoTiles.addTo(map);
   markers=L.layerGroup().addTo(map);
   const radar=$("radar-overlay");
   if(radar) $("map").appendChild(radar);
@@ -32,16 +43,27 @@ function renderSourceStatus(sources={}){
     return '<span class="source-chip '+state+'" title="'+esc(detail)+'"><i></i>'+esc(name)+'</span>';
   }).join("")+'</div>';
 }
+function localDateKey(value){
+  if(!value)return "";
+  const d=new Date(value);if(Number.isNaN(d.getTime()))return "";
+  return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
+}
+function matchesDate(post){
+  if(!activeStartDate&&!activeEndDate)return true;
+  const key=localDateKey(post.created_at);if(!key)return false;
+  return (!activeStartDate||key>=activeStartDate)&&(!activeEndDate||key<=activeEndDate);
+}
 function render(posts, incidents=allIncidents){
   allPosts=posts; allIncidents=incidents;
-  const visible=activeFilter==="todos"?posts:posts.filter(p=>p.classification===activeFilter);
-  const likes=posts.reduce((n,p)=>n+(p.public_metrics?.like_count||0),0), reposts=posts.reduce((n,p)=>n+(p.public_metrics?.retweet_count||0),0);
+  const dated=posts.filter(matchesDate);
+  const visible=activeFilter==="todos"?dated:dated.filter(p=>p.classification===activeFilter);
+  const likes=visible.reduce((n,p)=>n+(p.public_metrics?.like_count||0),0), reposts=visible.reduce((n,p)=>n+(p.public_metrics?.retweet_count||0),0);
   $("total").textContent=fmt(posts.length);$("likes").textContent=fmt(likes);$("reposts").textContent=fmt(reposts);$("count-tag").textContent=visible.length+" ITENS";
   $("feed").innerHTML=visible.length?visible.map(p=>'<article class="post"><div class="post-meta"><span>'+esc(p.source||"Rede social").toUpperCase()+' · '+esc(p.lang||"idioma n/d").toUpperCase()+'</span><span>'+esc(p.created_at?new Date(p.created_at).toLocaleString("pt-BR"):"")+'</span></div><div class="classification-row">'+badge(p.classification)+' <span class="category">'+esc(categories[p.category]||p.category||"")+'</span><span class="confidence">Confiança heurística: '+esc(p.confidence||"baixa")+'</span></div><p>'+esc(p.text)+'</p><div class="post-stats">'+esc(p.author||"Conta pública")+'　♡ '+fmt(p.public_metrics?.like_count)+'　↻ '+fmt(p.public_metrics?.retweet_count)+'　 Respostas '+fmt(p.public_metrics?.reply_count)+'</div>'+(p.url?'<a class="source-link" href="'+esc(p.url)+'" target="_blank" rel="noopener noreferrer">Abrir publicação original ↗</a>':"")+'</article>').join(""):'<div class="empty">Nenhuma publicação nesta classificação.</div>';
-  const active=posts.filter(p=>p.classification!=="ruido");
-  $("incident-count").textContent=fmt(incidents.length);
-  const shownIncidents=incidents.filter(g=>activeFilter==="todos"||g.posts?.some(p=>p.classification===activeFilter));
-  $("incidents").innerHTML=shownIncidents.length?shownIncidents.slice(0,12).map(g=>'<article class="incident-item"><div class="incident-head"><strong>'+esc(categories[g.category]||g.category||"Incidente")+'</strong>'+badge(g.classification)+'</div><p>'+esc(g.title||"Relato agrupado")+'</p><small>'+fmt(g.post_count)+' publicações · '+esc((g.sources||[]).join(", "))+' · '+esc(g.latest_at?new Date(g.latest_at).toLocaleString("pt-BR"):"")+'</small></article>').join(""):'<div class="empty">Nenhum grupo de incidentes nesta consulta.</div>';
+  const visibleIds=new Set(visible.map(p=>p.id));
+  const shownIncidents=incidents.map(g=>({...g,posts:(g.posts||[]).filter(p=>visibleIds.has(p.id))})).filter(g=>g.posts.length);
+  $("incident-count").textContent=fmt(shownIncidents.length);
+  $("incidents").innerHTML=shownIncidents.length?shownIncidents.slice(0,12).map(g=>'<article class="incident-item"><div class="incident-head"><strong>'+esc(categories[g.category]||g.category||"Incidente")+'</strong>'+badge(g.classification)+'</div><p>'+esc(g.posts[0]?.text||g.title||"Relato agrupado")+'</p><small>'+fmt(g.posts.length)+' publicações · '+esc([...new Set(g.posts.map(p=>p.source))].join(", "))+' · '+esc(g.latest_at?new Date(g.latest_at).toLocaleString("pt-BR"):"")+'</small></article>').join(""):'<div class="empty">Nenhum grupo de incidentes nesta consulta.</div>';
   addMapPosts();
 }
 async function load(){
@@ -58,4 +80,8 @@ async function load(){
 }
 function saveObservation(){const title=$("obs-title").value.trim(),body=$("obs-body").value.trim(),status=$("obs-status").value;if(!title||!body){alert("Preencha o título e a descrição.");return;}const el=document.createElement("article");el.className="observation";el.innerHTML='<strong>'+esc(title)+'</strong><span class="tag">'+esc(status.toUpperCase())+'</span><p>'+esc(body)+'</p><small>Registrado em '+new Date().toLocaleString("pt-BR")+'</small>';$("observations").querySelector(".empty")?.remove();$("observations").prepend(el);$("obs-title").value="";$("obs-body").value="";}
 initMap();time();setInterval(time,1000);$("refresh").addEventListener("click",load);$("search").addEventListener("click",load);$("query").addEventListener("keydown",e=>{if(e.key==="Enter")load();});$("add-observation").addEventListener("click",saveObservation);
-$("classification-filter").addEventListener("change",e=>{activeFilter=e.target.value;render(allPosts,allIncidents);});load();setInterval(load,300000);
+$("classification-filter").addEventListener("change",e=>{activeFilter=e.target.value;render(allPosts,allIncidents);});
+$("date-from").addEventListener("change",e=>{activeStartDate=e.target.value;if(activeEndDate&&activeStartDate>activeEndDate){activeEndDate=activeStartDate;$("date-to").value=activeEndDate;}render(allPosts,allIncidents);});
+$("date-to").addEventListener("change",e=>{activeEndDate=e.target.value;if(activeStartDate&&activeEndDate<activeStartDate){activeStartDate=activeEndDate;$("date-from").value=activeStartDate;}render(allPosts,allIncidents);});
+$("clear-date").addEventListener("click",()=>{activeStartDate="";activeEndDate="";$("date-from").value="";$("date-to").value="";render(allPosts,allIncidents);});
+load();setInterval(load,300000);
