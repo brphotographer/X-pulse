@@ -22,6 +22,16 @@ function time(){ $("clock").textContent=new Date().toISOString().slice(11,19)+" 
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function badge(status){return '<span class="classification '+esc(status)+'">'+esc(labels[status]||status)+'</span>';}
 function addMapPosts(){if(!markers)return;markers.clearLayers();L.marker([-14,-52],{opacity:0}).addTo(markers).bindPopup("O mapa não atribui coordenadas por inferência. A localização só será exibida quando vier estruturada de uma fonte confiável.");}
+function renderSourceStatus(sources={}){
+  const el=$("source-status"); if(!el)return;
+  const entries=Object.entries(sources);
+  const ok=entries.filter(([,s])=>s.status==="ok").length;
+  el.innerHTML='<div class="source-status-head"><strong>'+ok+' / '+entries.length+' fontes consultadas com sucesso</strong><span>Atualização automática</span></div><div class="source-chips">'+entries.map(([name,s])=>{
+    const state=s.status==="ok"?"online":s.status==="aguardando token opcional"||s.status==="aguardando chave de API"?"optional":"offline";
+    const detail=s.status==="ok"?(s.count+' sinais'):s.status;
+    return '<span class="source-chip '+state+'" title="'+esc(detail)+'"><i></i>'+esc(name)+'</span>';
+  }).join("")+'</div>';
+}
 function render(posts, incidents=allIncidents){
   allPosts=posts; allIncidents=incidents;
   const visible=activeFilter==="todos"?posts:posts.filter(p=>p.classification===activeFilter);
@@ -38,7 +48,7 @@ async function load(){
   $("connection").textContent="CONSULTANDO FONTES PÚBLICAS";$("refresh").disabled=true;
   try{
     const q=$("query").value.trim();const r=await fetch("/api/posts"+(q?"?q="+encodeURIComponent(q):""));const data=await r.json();if(!r.ok)throw new Error(data.error||"Erro na consulta");
-    render(data.posts||[],data.incidents||[]);$("mode").textContent="MULTIRREDE";
+    renderSourceStatus(data.sources||{});render(data.posts||[],data.incidents||[]);$("mode").textContent="MULTIRREDE";
     const sourceSummary=Object.entries(data.sources||{}).map(([name,s])=>name+": "+(s.status==="ok"?s.count+" publicações":s.status)).join(" · ");
     $("mode-note").textContent=sourceSummary||data.note||"Fontes públicas";
     $("connection").textContent=data.warning?"FONTES PARCIALMENTE DISPONÍVEIS":"FONTES PÚBLICAS CONECTADAS";
