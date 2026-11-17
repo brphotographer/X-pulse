@@ -2,7 +2,21 @@ const $ = (id) => document.getElementById(id);
 let map, markers, allPosts = [], allIncidents = [], activeFilter = "todos";
 const labels = { em_verificacao:"Em verificação", sinal_tecnico:"Sinal técnico", programado:"Programado", rumor:"Rumor / não confirmado", ruido:"Fora do escopo" };
 const categories = { energia:"Energia", conectividade:"Conectividade", servicos_digitais:"Serviços digitais", ciberseguranca:"Cibersegurança", infraestrutura:"Infraestrutura" };
-function initMap(){ if(!window.L)return; map=L.map("map",{worldCopyJump:true}).setView([20,0],2); L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:"abcd",maxZoom:19}).addTo(map); markers=L.layerGroup().addTo(map); }
+function initMap(){
+  if(!window.L)return;
+  map=L.map("map",{worldCopyJump:true,zoomControl:true}).setView([20,0],2);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:"abcd",maxZoom:19}).addTo(map);
+  markers=L.layerGroup().addTo(map);
+  const radar=$("radar-overlay");
+  if(radar) $("map").appendChild(radar);
+  const toggle=$("radar-toggle");
+  if(toggle) toggle.addEventListener("click",()=>{
+    const paused=radar?.classList.toggle("is-paused")||false;
+    toggle.setAttribute("aria-pressed",String(!paused));
+    toggle.textContent=paused?"▶ ATIVAR RADAR":"Ⅱ PAUSAR RADAR";
+    $("radar-state").textContent=paused?"RADAR PAUSADO":"RADAR ATIVO";
+  });
+}
 function fmt(n){return new Intl.NumberFormat("pt-BR").format(n||0)}
 function time(){ $("clock").textContent=new Date().toISOString().slice(11,19)+" UTC"; }
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
