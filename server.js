@@ -171,12 +171,16 @@ function groupIncidents(posts) {
     if (!match) groups.push({ category: post.category, tokens, posts: [post] });
     else { match.posts.push(post); for (const token of tokens) match.tokens.add(token); }
   }
-  return groups.map((g,i) => ({
-    id: "incident-" + (i+1), category: g.category, classification: g.posts.some(p=>p.classification==="sinal_tecnico") ? "sinal_tecnico" : g.posts[0].classification,
-    post_count: g.posts.length, sources: [...new Set(g.posts.map(p=>p.source))],
-    latest_at: g.posts.map(p=>p.created_at).filter(Boolean).sort().at(-1) || null,
-    title: (g.posts[0].text || "").slice(0,150), posts: g.posts
-  })).sort((a,b)=>b.post_count-a.post_count || String(b.latest_at).localeCompare(String(a.latest_at)));
+  return groups.map((g,i) => {
+    const id = "incident-" + (i+1);
+    for (const post of g.posts) post.incident_group = id;
+    return {
+      id, category: g.category, classification: g.posts.some(p=>p.classification==="sinal_tecnico") ? "sinal_tecnico" : g.posts[0].classification,
+      post_count: g.posts.length, sources: [...new Set(g.posts.map(p=>p.source))],
+      latest_at: g.posts.map(p=>p.created_at).filter(Boolean).sort().at(-1) || null,
+      title: (g.posts[0].text || "").slice(0,150), posts: g.posts
+    };
+  }).sort((a,b)=>b.post_count-a.post_count || String(b.latest_at).localeCompare(String(a.latest_at)));
 }
 
 async function getPosts(term) {
