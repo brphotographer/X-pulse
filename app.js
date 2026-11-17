@@ -18,9 +18,6 @@ function render(posts, incidents=allIncidents){
   $("incident-count").textContent=fmt(incidents.length);
   const shownIncidents=incidents.filter(g=>activeFilter==="todos"||g.posts?.some(p=>p.classification===activeFilter));
   $("incidents").innerHTML=shownIncidents.length?shownIncidents.slice(0,12).map(g=>'<article class="incident-item"><div class="incident-head"><strong>'+esc(categories[g.category]||g.category||"Incidente")+'</strong>'+badge(g.classification)+'</div><p>'+esc(g.title||"Relato agrupado")+'</p><small>'+fmt(g.post_count)+' publicações · '+esc((g.sources||[]).join(", "))+' · '+esc(g.latest_at?new Date(g.latest_at).toLocaleString("pt-BR"):"")+'</small></article>').join(""):'<div class="empty">Nenhum grupo de incidentes nesta consulta.</div>';
-  $("review-count").textContent=fmt(posts.filter(p=>p.classification==="em_verificacao").length);
-  $("rumor-count").textContent=fmt(posts.filter(p=>p.classification==="rumor").length);
-  $("scheduled-count").textContent=fmt(posts.filter(p=>p.classification==="programado").length);
   addMapPosts();
 }
 async function load(){
