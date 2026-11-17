@@ -2,7 +2,7 @@
   "name": "x-pulse",
   "version": "1.0.0",
   "private": true,
-  "description": "Painel de monitoramento público de eventos e relatos na rede X",
+  "description": "Monitoramento global de sinais públicos de infraestrutura",
   "main": "server.js",
   "scripts": { "start": "node server.js" },
   "engines": { "node": ">=18" }
