@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#08111f"><meta name="description" content="Painel de monitoramento público de relatos e eventos globais.">
+  <title>X PULSE — Monitoramento Global</title>
+  <link rel="preconnect" href="https://unpkg.com"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><span class="brand-mark">X</span><span>X PULSE<small>GLOBAL SIGNAL MONITOR</small></span></a>
+    <div class="top-status"><span class="pulse"></span><span id="connection">CONECTANDO</span><span class="utc" id="clock">--:--:-- UTC</span></div>
+  </header>
+  <main class="shell">
+    <section class="intro">
+      <div><p class="eyebrow">PAINEL DE SITUAÇÃO · TEMPO QUASE REAL</p><h1>Monitoramento <span>global</span></h1><p class="sub">Acompanhe relatos públicos sobre conectividade, energia e possíveis interrupções de infraestrutura.</p></div>
+      <div class="refresh-wrap"><span id="updated">Aguardando atualização</span><button id="refresh" class="button">↻ Atualizar</button></div>
+    </section>
+    <section class="metrics">
+      <article class="metric"><span>RELATOS NA CONSULTA</span><strong id="total">—</strong><small>Posts retornados pela API</small></article>
+      <article class="metric"><span>CURTIDAS</span><strong id="likes">—</strong><small>Interações públicas</small></article>
+      <article class="metric"><span>REPOSTS</span><strong id="reposts">—</strong><small>Compartilhamentos públicos</small></article>
+      <article class="metric"><span>STATUS DA FONTE</span><strong id="mode" class="status-value">DEMO</strong><small id="mode-note">Dados ilustrativos</small></article>
+    </section>
+    <section class="toolbar">
+      <label for="query">BUSCAR RELATOS PÚBLICOS</label><div class="searchline"><input id="query" value='("queda de energia" OR apagão OR "sem luz" OR "sem internet" OR outage OR instabilidade) -is:retweet' maxlength="450"><button id="search" class="button primary">Pesquisar</button></div>
+      <p class="hint">A consulta usa conteúdo público disponível na API do X. Evite termos que identifiquem pessoas.</p>
+    </section>
+    <section class="content-grid">
+      <article class="panel map-panel"><div class="panel-head"><div><p class="eyebrow">VISÃO GEOGRÁFICA</p><h2>Mapa de ocorrências</h2></div><span class="tag">LOCALIZAÇÃO PÚBLICA</span></div><div id="map"></div><p class="map-note">O mapa só exibe localizações fornecidas publicamente pela API. Não inferimos a localização de usuários pelo texto ou perfil.</p></article>
+      <article class="panel feed-panel"><div class="panel-head"><div><p class="eyebrow">FLUXO DE INFORMAÇÕES</p><h2>Relatos recentes</h2></div><span id="count-tag" class="tag">0 ITENS</span></div><div id="feed" class="feed"><div class="empty">Carregando relatos…</div></div></article>
+    </section>
+    <section class="panel observations">
+      <div class="panel-head"><div><p class="eyebrow">REGISTRO OPERACIONAL</p><h2>Observações e evidências</h2></div><span class="tag">LOCAL · NESTE NAVEGADOR</span></div>
+      <div class="observation-form"><input id="obs-title" placeholder="Título da observação"><select id="obs-status"><option>Relato</option><option>Suspeita</option><option>Confirmado por fonte externa</option></select><textarea id="obs-body" placeholder="Descreva a região, horário, fonte e evidências verificáveis…"></textarea><button id="add-observation" class="button primary">＋ Registrar observação</button></div>
+      <div id="observations" class="observations-list"><p class="empty">Nenhuma observação registrada nesta sessão.</p></div>
+    </section>
+    <footer><span>X PULSE · Painel experimental</span><span>Relatos em redes sociais não comprovam incidentes. Confirme com operadores e autoridades.</span></footer>
+  </main>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="/app.js"></script>
+</body></html>
