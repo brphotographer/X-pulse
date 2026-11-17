@@ -6,11 +6,13 @@ const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
 const MASTODON_HOST = process.env.MASTODON_HOST || "mastodon.social";
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || "";
+const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || "";
 const CACHE_MS = 3 * 60 * 1000;
 const YOUTUBE_CACHE_MS = 30 * 60 * 1000;
 const MIME = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json; charset=utf-8", ".ico": "image/x-icon" };
 let cache = { key: "", at: 0, value: null };
 let youtubeCache = { at: 0, posts: [] };
+let cloudflareCache = { at: 0, posts: [] };
 
 function send(res, status, data, type="application/json; charset=utf-8") {
   res.writeHead(status, { "Content-Type": type, "Access-Control-Allow-Origin": "*" });
@@ -96,22 +98,48 @@ async function youtubeSearch() {
     public_metrics: { like_count: 0, retweet_count: 0, reply_count: 0 } }));
   youtubeCache = { at: Date.now(), posts }; return posts;
 }
+async function cloudflareOutages() {
+  if (!CLOUDFLARE_API_TOKEN) return [];
+  if (cloudflareCache.posts.length && Date.now() - cloudflareCache.at < 5 * 60 * 1000) return cloudflareCache.posts;
+  const url = "https://api.cloudflare.com/client/v4/radar/annotations/outages?dateRange=7d&limit=50&format=json";
+  const response = await fetch(url, { headers: { "Authorization": "Bearer " + CLOUDFLARE_API_TOKEN, "Accept": "application/json" }, signal: AbortSignal.timeout(15000) });
+  if (!response.ok) throw new Error("Cloudflare Radar HTTP " + response.status);
+  const data = await response.json();
+  if (!data.success) throw new Error("Cloudflare Radar não confirmou a consulta");
+  const posts = (data.result?.annotations || []).map(item => {
+    const locations = (item.locationsDetails || []).map(x => x.name || x.code).filter(Boolean);
+    const cause = item.outage?.outageCause || "UNKNOWN";
+    return {
+      id: "cloudflare-" + item.id, source: "Cloudflare Radar",
+      text: [item.scope, item.description, "Causa: " + cause.replace(/_/g, " ")].filter(Boolean).join(" — "),
+      created_at: item.startDate || null, lang: "und", author: "Sinal técnico agregado",
+      url: item.linkedUrl || "https://radar.cloudflare.com/",
+      kind: "technical_signal", locations, country_codes: item.locations || [],
+      outage_type: item.outage?.outageType || "UNKNOWN",
+      public_metrics: { like_count: 0, retweet_count: 0, reply_count: 0 }
+    };
+  });
+  cloudflareCache = { at: Date.now(), posts };
+  return posts;
+}
 async function getPosts(term) {
   const custom = String(term || "").trim().slice(0, 160), cacheKey = custom || "default";
   if (cache.value && cache.key === cacheKey && Date.now() - cache.at < CACHE_MS) return { ...cache.value, cached: true };
-  const blueskyTerms = custom ? [custom] : ["apagão", '"sem internet"', '"queda de energia"'];
-  const mastodonTags = custom ? [] : ["apagao", "seminternet", "quedadeenergia"];
-  const redditTerms = custom ? [custom] : ['apagão OR "sem internet" OR "queda de energia"', "internet caiu", "falta de luz"];
+  const blueskyTerms = custom ? [custom] : ['"power outage"', '"internet outage"', '"blackout"', '"corte de luz"', '"panne internet"', '"stromausfall"'];
+  const mastodonTags = custom ? [] : ["poweroutage", "internetoutage", "blackout", "cortedeluz", "panneinternet"];
+  const redditTerms = custom ? [custom] : ['"power outage" OR "internet outage"', "blackout", '"corte de luz" OR "caída de internet"', '"panne internet" OR stromausfall'];
   const sources = {
     Bluesky: { status: "consultando", count: 0 }, Mastodon: { status: "consultando", count: 0 },
     Reddit: { status: "consultando", count: 0 },
+    "Cloudflare Radar": { status: CLOUDFLARE_API_TOKEN ? "consultando" : "aguardando token opcional", count: 0 },
     YouTube: { status: YOUTUBE_API_KEY ? "consultando" : "aguardando chave de API", count: 0 }
   };
   const jobs = [
     ...blueskyTerms.map(term => blueskySearch(term).then(posts => ({ source: "Bluesky", posts }))),
     ...mastodonTags.map(tag => mastodonTag(tag).then(posts => ({ source: "Mastodon", posts }))),
     ...redditTerms.map(term => redditSearch(term).then(posts => ({ source: "Reddit", posts }))),
-    ...(YOUTUBE_API_KEY ? [youtubeSearch().then(posts => ({ source: "YouTube", posts }))] : [])
+    ...(YOUTUBE_API_KEY ? [youtubeSearch().then(posts => ({ source: "YouTube", posts }))] : []),
+    ...(CLOUDFLARE_API_TOKEN ? [cloudflareOutages().then(posts => ({ source: "Cloudflare Radar", posts }))] : [])
   ];
   const settled = await Promise.allSettled(jobs), posts = [], errors = [];
   for (const result of settled) {
@@ -119,21 +147,21 @@ async function getPosts(term) {
       posts.push(...result.value.posts); sources[result.value.source].count += result.value.posts.length;
     } else errors.push(result.reason?.message || "Falha na fonte");
   }
-  for (const name of ["Bluesky", "Mastodon", "Reddit"]) if (!sources[name].count) sources[name].status = "sem resultados ou indisponível";
-  for (const name of ["Bluesky", "Mastodon", "Reddit"]) if (sources[name].count) sources[name].status = "ok";
+  for (const name of ["Bluesky", "Mastodon", "Reddit", "Cloudflare Radar"]) if (!sources[name].count && sources[name].status === "consultando") sources[name].status = "sem resultados ou indisponível";
+  for (const name of ["Bluesky", "Mastodon", "Reddit", "Cloudflare Radar"]) if (sources[name].count) sources[name].status = "ok";
   if (sources.YouTube.count) sources.YouTube.status = "ok";
   else if (YOUTUBE_API_KEY) sources.YouTube.status = "sem resultados ou indisponível";
   const unique = [...new Map(posts.filter(p => p.text).map(p => [p.id, p])).values()]
     .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)).slice(0, 100);
   const value = { mode: "multi", posts: unique, result_count: unique.length, sources,
     warning: errors.length ? "Algumas consultas falharam. As fontes disponíveis continuam sendo exibidas." : "",
-    note: "Somente publicações públicas. YouTube requer chave própria da API; a cobertura depende das buscas e das configurações de cada rede.",
+    note: "Monitoramento global experimental. Apenas conteúdo público e sinais técnicos disponíveis; YouTube e Cloudflare Radar exigem credenciais próprias. A cobertura varia por país, idioma e fonte.",
     updated_at: new Date().toISOString() };
   cache = { key: cacheKey, at: Date.now(), value }; return value;
 }
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
-  if (url.pathname === "/api/health") return send(res, 200, { ok: true, service: "X PULSE", sources: ["Bluesky", "Mastodon", "Reddit", "YouTube"] });
+  if (url.pathname === "/api/health") return send(res, 200, { ok: true, service: "X PULSE", sources: ["Bluesky", "Mastodon", "Reddit", "YouTube", "Cloudflare Radar"] });
   if (url.pathname === "/api/posts") {
     try { return send(res, 200, await getPosts(url.searchParams.get("q"))); }
     catch (e) { return send(res, 502, { error: e.message || "Falha ao consultar fontes públicas" }); }
