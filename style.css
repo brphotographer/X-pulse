@@ -230,3 +230,53 @@ h1{letter-spacing:-1.7px}
 .install-help summary{cursor:pointer;color:var(--cyan);font-weight:750}
 .install-help p{line-height:1.6}
 @media(max-width:760px){.install-help{max-width:none;width:100%;margin-bottom:6px}.install-help summary{font-size:11px}}
+
+
+/* Editorial news desk — hierarchy inspired by a live international newsroom */
+.news-section{margin:22px 0 18px;padding:24px;border:1px solid #29425d;border-radius:16px;background:linear-gradient(135deg,rgba(18,39,62,.98),rgba(10,23,39,.98));box-shadow:0 18px 44px rgba(0,0,0,.2)}
+.news-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:19px;padding-bottom:16px;border-bottom:1px solid rgba(132,164,195,.2)}
+.news-section-head h2{margin:0;font-size:clamp(24px,3vw,34px);letter-spacing:-1px;line-height:1.1}
+.news-section-head p:not(.eyebrow){margin:8px 0 0;color:#a8bbd0;font-size:12px;line-height:1.6;max-width:620px}
+.news-live{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;color:#9fe8d4;font-size:9px;font-weight:850;letter-spacing:1.2px;border:1px solid rgba(81,224,176,.3);border-radius:30px;padding:8px 11px}
+.news-live i{width:7px;height:7px;border-radius:50%;background:#51e0b0;box-shadow:0 0 10px #51e0b0}
+.story-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);gap:13px}
+.story-card{min-width:0;border:1px solid rgba(119,151,184,.2);border-radius:12px;background:rgba(5,16,29,.55);padding:16px;display:flex;flex-direction:column;gap:10px}
+.story-lead{padding:22px;background:linear-gradient(145deg,rgba(23,49,75,.92),rgba(9,22,38,.94));border-color:rgba(92,225,230,.28);min-height:270px;justify-content:center}
+.story-side{display:grid;grid-template-rows:repeat(3,minmax(0,1fr));gap:10px}
+.story-kicker,.story-meta,.story-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.story-rank{font-size:9px;font-weight:900;letter-spacing:1.3px;color:var(--cyan)}
+.story-type{font-size:9px;font-weight:800;letter-spacing:.4px;color:#b9c9dc;border:1px solid #3a506a;border-radius:5px;padding:4px 7px}
+.story-type.official_status{color:#8de7c5;border-color:#327b69;background:rgba(42,132,106,.1)}
+.story-type.technical_signal{color:#9be6ee;border-color:#317c87;background:rgba(43,135,147,.1)}
+.story-type.news_signal{color:#ffd28c;border-color:#8c6a36;background:rgba(151,107,36,.1)}
+.story-type.context_signal{color:#b8c2d0;border-color:#586579}
+.story-card h3{margin:0;color:#f3f7fd;font-size:15px;line-height:1.48;letter-spacing:-.15px;overflow-wrap:anywhere}
+.story-lead h3{font-size:clamp(20px,2.2vw,28px);line-height:1.32;letter-spacing:-.6px}
+.story-reason{margin:0;color:#a8bdd2;font-size:11px;line-height:1.5}
+.story-meta{margin-top:auto;color:#8da4bd;font-size:9px}
+.story-footer{padding-top:9px;border-top:1px solid rgba(130,157,186,.16)}
+.story-footer .classification{font-size:8px}
+.story-score{color:#9db1c8;font-size:8px;font-weight:850;letter-spacing:.8px}
+.story-footer a{color:var(--cyan);font-size:10px;font-weight:750;text-decoration:none}
+.story-footer a:hover{text-decoration:underline}
+.news-disclaimer{margin:13px 0 0;color:#8198b1;font-size:10px;line-height:1.55}
+.feed-panel .panel-head h2{font-size:20px}
+.feed-panel .eyebrow{color:#8da6c0}
+.feed .post{padding:17px 3px}
+.feed .post:first-child{border-top:0}
+.feed .post p.post-original{font-size:13px;line-height:1.65;color:#e2eaf4}
+.feed .post-meta{font-size:9px}
+.incidents-panel{background:linear-gradient(145deg,rgba(15,31,50,.98),rgba(10,22,37,.98))}
+@media(max-width:850px){.story-grid{grid-template-columns:1fr}.story-lead{min-height:0}.story-side{grid-template-rows:none;grid-template-columns:repeat(2,minmax(0,1fr))}.story-brief:last-child{grid-column:1/-1}}
+@media(max-width:600px){
+ .news-section{padding:16px;margin:16px 0;border-radius:13px}
+ .news-section-head{align-items:flex-start;flex-direction:column;gap:10px}
+ .news-section-head h2{font-size:25px}
+ .story-side{grid-template-columns:1fr}
+ .story-brief:last-child{grid-column:auto}
+ .story-lead{padding:17px}
+ .story-lead h3{font-size:21px}
+ .story-card{padding:14px}
+ .story-footer{align-items:flex-start}
+ .story-footer a{width:100%}
+}
