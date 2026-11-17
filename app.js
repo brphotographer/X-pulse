@@ -1,6 +1,6 @@
 const $ = (id) => document.getElementById(id);
 let map, markers;
-function initMap(){ if(!window.L)return; map=L.map("map",{worldCopyJump:true}).setView([-14,-52],4); L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:"abcd",maxZoom:19}).addTo(map); markers=L.layerGroup().addTo(map); }
+function initMap(){ if(!window.L)return; map=L.map("map",{worldCopyJump:true}).setView([20,0],2); L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:"abcd",maxZoom:19}).addTo(map); markers=L.layerGroup().addTo(map); }
 function fmt(n){return new Intl.NumberFormat("pt-BR").format(n||0)}
 function time(){ $("clock").textContent=new Date().toISOString().slice(11,19)+" UTC"; }
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
