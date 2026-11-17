@@ -49,7 +49,7 @@ async function load(){
   try{
     const q=$("query").value.trim();const r=await fetch("/api/posts"+(q?"?q="+encodeURIComponent(q):""));const data=await r.json();if(!r.ok)throw new Error(data.error||"Erro na consulta");
     renderSourceStatus(data.sources||{});render(data.posts||[],data.incidents||[]);$("mode").textContent="MULTIRREDE";
-    const sourceSummary=Object.entries(data.sources||{}).map(([name,s])=>name+": "+(s.status==="ok"?s.count+" publicações":s.status)).join(" · ");
+    const sourceEntries=Object.values(data.sources||{});const connectedSources=sourceEntries.filter(s=>s.status==="ok").length;const receivedSignals=sourceEntries.reduce((n,s)=>n+(s.count||0),0);const sourceSummary=connectedSources+" fontes conectadas · "+receivedSignals+" sinais recebidos";
     $("mode-note").textContent=sourceSummary||data.note||"Fontes públicas";
     $("connection").textContent=data.warning?"FONTES PARCIALMENTE DISPONÍVEIS":"FONTES PÚBLICAS CONECTADAS";
     $("updated").textContent="Atualizado às "+new Date().toLocaleTimeString("pt-BR");
