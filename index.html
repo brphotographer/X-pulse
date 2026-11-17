@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+  <a class="skip-link" href="#overview">Pular para o conteúdo</a>
   <header class="topbar">
     <a class="brand" href="/"><span class="brand-mark">X</span><span>X PULSE<small>GLOBAL SIGNAL INTELLIGENCE</small></span></a>
     <nav class="primary-nav" aria-label="Navegação principal"><a href="#overview">Visão geral</a><a href="#map-section">Mapa</a><a href="#reports">Relatos</a><a href="#notes">Observações</a></nav><div class="top-status"><label class="language-control" for="language-select">IDIOMA <select id="language-select" aria-label="Idioma"><option value="pt-BR">Português</option><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="it">Italiano</option><option value="ja">日本語</option><option value="zh">中文</option></select></label><span class="pulse"></span><span id="connection">CONECTANDO</span><span class="utc" id="clock">--:--:-- UTC</span></div>
@@ -35,11 +36,11 @@
       <article class="panel feed-panel" id="reports"><div class="panel-head"><div><p class="eyebrow">FLUXO DE INFORMAÇÕES</p><h2 data-i18n="classifiedReports">Relatos classificados</h2></div><span id="count-tag" class="tag">0 ITENS</span></div><div id="feed" class="feed"><div class="empty">Carregando relatos…</div></div></article>
     </section>
     <section class="panel observations" id="notes">
-      <div class="panel-head"><div><p class="eyebrow">REGISTRO OPERACIONAL</p><h2 data-i18n="observationsTitle">Observações e evidências</h2></div><span class="tag">LOCAL · NESTE NAVEGADOR</span></div>
+      <div class="panel-head"><div><p class="eyebrow">REGISTRO OPERACIONAL</p><h2 data-i18n="observationsTitle">Observações e evidências</h2></div><span class="tag">SALVO NESTE NAVEGADOR</span></div>
       <div class="observation-form"><input id="obs-title" placeholder="Título da observação"><select id="obs-status"><option>Relato</option><option>Suspeita</option><option>Confirmado por fonte externa</option></select><textarea id="obs-body" placeholder="Descreva a região, horário, fonte e evidências verificáveis…"></textarea><button id="add-observation" class="button primary">＋ Registrar observação</button></div>
       <div id="observations" class="observations-list"><p class="empty">Nenhuma observação registrada nesta sessão.</p></div>
     </section>
-    <footer><span>X PULSE · Global incident intelligence (experimental)</span><span>Relatos públicos não confirmam incidentes. Verifique sinais técnicos e fontes oficiais antes de classificar uma ocorrência.</span></footer>
+    <footer><details class="install-help"><summary>Instalar como aplicativo</summary><p>No iPhone: abra este site no Safari, toque em Compartilhar e escolha “Adicionar à Tela de Início”. Em outros navegadores compatíveis, use a opção Instalar aplicativo.</p></details><span>X PULSE · Global incident intelligence (experimental)</span><span>Relatos públicos não confirmam incidentes. Verifique sinais técnicos e fontes oficiais antes de classificar uma ocorrência.</span></footer>
   </main>
   <nav class="mobile-nav" aria-label="Navegação rápida"><a href="#overview"><span>⌂</span>Início</a><a href="#map-section"><span>◎</span>Mapa</a><a href="#reports"><span>≋</span>Relatos</a><a href="#notes"><span>＋</span>Notas</a></nav>
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script><script src="/app.js"></script>
