@@ -69,3 +69,10 @@
 .date-filterline button:hover{border-color:var(--cyan);color:var(--cyan)}
 .date-filter-note{margin:7px 0 0;color:var(--muted);font-size:10px}
 @media(max-width:540px){.date-filterline{gap:7px}.date-filterline strong{width:100%}.date-filterline input{flex:1;min-width:120px}}
+
+.date-presets{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:9px}
+.date-presets span{color:var(--muted);font-size:9px;font-weight:800;letter-spacing:1px;margin-right:2px}
+.date-presets button{background:#0b1a2b;border:1px solid #30445e;border-radius:7px;color:#b7c9dd;padding:7px 11px;font-size:10px;font-weight:700;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.date-presets button:hover{border-color:var(--cyan);color:var(--cyan)}
+.date-presets button.active{background:#16404a;border-color:var(--cyan);color:#a4fff0;box-shadow:inset 0 0 0 1px rgba(92,225,230,.12)}
+@media(max-width:540px){.date-presets{gap:6px}.date-presets button{flex:1;min-width:65px;padding:8px 7px}}
