@@ -24,3 +24,26 @@
 .incident-item p{font-size:12px;margin:8px 0;overflow-wrap:anywhere}
 .incident-item small{font-size:10px;color:var(--muted)}
 @media(max-width:650px){.incidents-list{grid-template-columns:1fr}}
+
+/* Global radar overlay — visual sweep only; no synthetic incident locations */
+.map-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.map-stage{position:relative;isolation:isolate;overflow:hidden;border-radius:10px;background:#071321}
+#map{position:relative;z-index:1}
+.radar-overlay{position:absolute;inset:0;z-index:450;overflow:hidden;border-radius:10px;pointer-events:none;contain:layout paint}
+.radar-grid{position:absolute;inset:0;opacity:.15;background-image:linear-gradient(rgba(92,225,230,.13) 1px,transparent 1px),linear-gradient(90deg,rgba(92,225,230,.13) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse at center,#000 5%,transparent 82%)}
+.radar-sweep{position:absolute;width:min(76vw,620px);height:min(76vw,620px);max-height:95%;max-width:95%;aspect-ratio:1;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;background:conic-gradient(from 0deg,transparent 0deg,rgba(65,225,220,.015) 245deg,rgba(65,225,220,.10) 300deg,rgba(65,225,220,.38) 357deg,transparent 360deg);animation:radar-rotation 18s linear infinite;mix-blend-mode:screen}
+.radar-rings{position:absolute;left:50%;top:50%;width:min(68vw,520px);aspect-ratio:1;max-width:82%;max-height:90%;transform:translate(-50%,-50%);border:1px solid rgba(92,225,230,.18);border-radius:50%;box-shadow:0 0 0 34px rgba(92,225,230,.025),0 0 0 68px rgba(92,225,230,.02),inset 0 0 38px rgba(92,225,230,.035)}
+.radar-center{position:absolute;left:50%;top:50%;width:7px;height:7px;transform:translate(-50%,-50%);border-radius:50%;background:#8bfff2;box-shadow:0 0 10px 3px rgba(92,225,230,.7),0 0 28px rgba(92,225,230,.55)}
+.radar-center:after{content:"";position:absolute;inset:-7px;border:1px solid rgba(92,225,230,.55);border-radius:50%;animation:radar-center-pulse 3.4s ease-out infinite}
+.radar-readout{position:absolute;z-index:451;left:12px;bottom:12px;display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid rgba(92,225,230,.2);border-radius:7px;background:rgba(5,17,29,.78);backdrop-filter:blur(8px);color:#b7d6e2;font-size:9px;font-weight:800;letter-spacing:1px;pointer-events:none}
+.radar-live-dot{width:6px;height:6px;border-radius:50%;background:#66f0c0;box-shadow:0 0 9px #66f0c0;animation:radar-live 1.8s ease-in-out infinite}
+.radar-divider{color:#527b8a}
+.radar-toggle{border:1px solid #28515e;border-radius:7px;background:#0b1d2c;color:#8fece8;padding:7px 9px;font-size:9px;font-weight:800;letter-spacing:.7px;cursor:pointer}
+.radar-toggle:hover{border-color:var(--cyan);background:#102b3a}
+.radar-overlay.is-paused .radar-sweep,.radar-overlay.is-paused .radar-center:after,.radar-overlay.is-paused .radar-live-dot{animation-play-state:paused}
+.radar-overlay.is-paused .radar-sweep{opacity:.22}
+@keyframes radar-rotation{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes radar-center-pulse{0%{transform:scale(.65);opacity:.85}100%{transform:scale(2.8);opacity:0}}
+@keyframes radar-live{0%,100%{opacity:1}50%{opacity:.38}}
+@media(max-width:540px){.radar-readout{font-size:8px;left:8px;bottom:8px}.radar-sweep{width:88vw;height:88vw}.radar-rings{width:74vw}}
+@media(prefers-reduced-motion:reduce){.radar-sweep,.radar-center:after,.radar-live-dot{animation:none!important}.radar-sweep{opacity:.16}}
