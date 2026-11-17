@@ -301,7 +301,7 @@ function tokensFor(post) {
   return new Set(String(post.text || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/https?:\/\/\S+/g," ").replace(/[@#][\w.-]+/g," ").replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(w=>w.length>2&&!stop.has(w)));
 }
 function groupIncidents(posts) {
-  const candidates = posts.filter(p => p.classification !== "ruido");
+  const candidates = posts.filter(p => p.classification !== "ruido" && p.kind !== "context_signal");
   const groups = [];
   for (const post of candidates) {
     const tokens = tokensFor(post);
