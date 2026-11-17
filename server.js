@@ -186,9 +186,9 @@ function groupIncidents(posts) {
 async function getPosts(term) {
   const custom = String(term || "").trim().slice(0, 160), cacheKey = custom || "default";
   if (cache.value && cache.key === cacheKey && Date.now() - cache.at < CACHE_MS) return { ...cache.value, cached: true };
-  const blueskyTerms = custom ? [custom] : ['"power outage"', '"internet outage"', '"blackout"', '"corte de luz"', '"caída de internet"', '"apagón"', '"panne internet"', '"stromausfall"', '"停電"', '"ネット障害"'];
-  const mastodonTags = custom ? [] : ["poweroutage", "internetoutage", "blackout", "cortedeluz", "caidadeinternet", "apagón", "panneinternet", "stromausfall"];
-  const redditTerms = custom ? [custom] : ['"power outage" OR "internet outage"', "blackout", '"corte de luz" OR "caída de internet" OR apagón', '"panne internet" OR stromausfall', '"停電" OR "ネット障害"'];
+  const blueskyTerms = custom ? [custom] : ['"power outage"', '"internet outage"', '"blackout"', '"bank outage"', '"cloud outage"', '"service outage"', '"telecom outage"', '"cyber incident"', '"corte de luz"', '"caída de internet"', '"apagón"', '"panne internet"', '"stromausfall"', '"停電"', '"ネット障害"'];
+  const mastodonTags = custom ? [] : ["poweroutage", "internetoutage", "blackout", "bankoutage", "cloudoutage", "serviceoutage", "telecomoutage", "cyberincident", "cortedeluz", "caidadeinternet", "apagón", "panneinternet", "stromausfall"];
+  const redditTerms = custom ? [custom] : ['"power outage" OR "internet outage"', '"bank outage" OR "payment outage"', '"cloud outage" OR "service outage"', '"telecom outage" OR "mobile network down"', '"cyber incident" OR ransomware', "blackout", '"corte de luz" OR "caída de internet" OR apagón', '"panne internet" OR stromausfall', '"停電" OR "ネット障害"'];
   const sources = {
     Bluesky: { status: "consultando", count: 0 }, Mastodon: { status: "consultando", count: 0 },
     Reddit: { status: "consultando", count: 0 },
