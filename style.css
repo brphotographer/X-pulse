@@ -217,3 +217,16 @@ h1{letter-spacing:-1.7px}
   html{scroll-behavior:auto}
   *,*:before,*:after{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
 }
+
+
+.source-details>summary{list-style:none;cursor:pointer}
+.source-details>summary::-webkit-details-marker{display:none}
+.source-details>summary:after{content:"";display:block}
+.source-details[open] .source-status-head{margin-bottom:10px}
+.load-error{margin:0 0 9px;padding:9px 11px;border:1px solid #80515a;border-radius:8px;background:#2b1c26;color:#ffd1d7;font-size:11px;line-height:1.5}
+.skip-link{position:fixed;z-index:2000;top:8px;left:8px;transform:translateY(-150%);padding:10px 14px;border-radius:8px;background:#e5fbff;color:#071321;font-weight:800}
+.skip-link:focus{transform:translateY(0)}
+.install-help{display:inline-block;max-width:320px;color:#b8c9dc;font-size:10px}
+.install-help summary{cursor:pointer;color:var(--cyan);font-weight:750}
+.install-help p{line-height:1.6}
+@media(max-width:760px){.install-help{max-width:none;width:100%;margin-bottom:6px}.install-help summary{font-size:11px}}
