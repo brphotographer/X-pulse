@@ -2,6 +2,7 @@ const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
 
+
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
 const MASTODON_HOST = process.env.MASTODON_HOST || "mastodon.social";
@@ -122,6 +123,62 @@ async function cloudflareOutages() {
   cloudflareCache = { at: Date.now(), posts };
   return posts;
 }
+
+const EVENT_WORDS = /\\b(outage|blackout|blackout|power cut|power outage|internet down|internet outage|service disruption|service down|downtime|failed|failure|crash|offline|apag[oã]o|corte de luz|queda de energia|sem energia|sem internet|ca[ií]da|falha|interrup[cç][aã]o|stromausfall|panne|coupure|apag[oó]n|corte el[eé]ctrico|ca[ií]da de internet|停電|障害)\\b/i;
+const DIGITAL_WORDS = /\\b(bank|banking|chase|visa|mastercard|paypal|payment|payments|aws|azure|cloudflare|microsoft 365|office 365|google cloud|gmail|outlook|facebook|instagram|whatsapp|telegram|youtube|netflix|spotify|github|discord|united airlines|airline|airlines|telecom|carrier|mobile network|cellular|banco|bancos|pagamento|nuvem|servicio digital|servicio bancario)\\b/i;
+const POWER_WORDS = /\\b(power|electric|electricity|grid|energy|substation|transformer|luz|energia|el[eé]ctrica|rede el[eé]trica|strom|elektrizit[aä]t|electricidad|energ[ií]a|停電)\\b/i;
+const CYBER_WORDS = /\\b(cyber.?attack|ransomware|cyber incident|hack(ed|ing)?|ddos|malware|ataque cibern[eé]tico|incidente cibern[eé]tico|ataque inform[aá]tico)\\b/i;
+const SCHEDULED_WORDS = /\\b(scheduled|planned|maintenance|programmed|corte programado|interrupci[oó]n programada|mantenimiento|programado|planificado|wartung|geplant)\\b/i;
+const RUMOR_WORDS = /\\b(rumou?r|hoax|fake|unverified|supposed|alleged|ap[oó]calipse|apag[oó]n mundial|worldwide blackout|global blackout|conspiracy|rumor|supuesto|suposta|desinformaci[oó]n)\\b/i;
+const NOISE_WORDS = /\\b(song lyrics|letra de la canci[oó]n|music video|what is a blackout|what is blackout|how does|explainer|guide to|article about|tariff|rates|price|precios|tarifas|börse|energiewende)\\b/i;
+function classifyPost(post) {
+  const text = String(post.text || "");
+  const isTechnical = post.kind === "technical_signal" || post.source === "Cloudflare Radar";
+  let category = "infraestrutura";
+  if (CYBER_WORDS.test(text)) category = "ciberseguranca";
+  else if (DIGITAL_WORDS.test(text) && !POWER_WORDS.test(text)) category = "servicos_digitais";
+  else if (POWER_WORDS.test(text)) category = "energia";
+  else if (/internet|broadband|wifi|wi-fi|fiber|fibra|connectivity|conectividade|network|rede|telecom/i.test(text)) category = "conectividade";
+  let status = "em_verificacao";
+  let confidence = isTechnical ? "alta" : "baixa";
+  if (NOISE_WORDS.test(text) && !EVENT_WORDS.test(text)) { status = "ruido"; confidence = "baixa"; }
+  else if (RUMOR_WORDS.test(text)) { status = "rumor"; confidence = "baixa"; }
+  else if (SCHEDULED_WORDS.test(text)) { status = "programado"; confidence = "media"; }
+  else if (isTechnical) { status = "sinal_tecnico"; confidence = "alta"; }
+  else if (EVENT_WORDS.test(text)) confidence = "media";
+  else { status = "ruido"; confidence = "baixa"; }
+  return { ...post, category, classification: status, confidence };
+}
+function tokensFor(post) {
+  const stop = new Set(["the","and","for","with","that","this","from","have","has","was","were","are","its","after","before","una","uno","los","las","del","por","con","que","una","para","das","der","die","und","von","bei","em","uma","uns","dos","das","com","sobre","após","mais","sem","the"]);
+  return new Set(String(post.text || "").toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").replace(/https?:\\/\\/\\S+/g," ").replace(/[@#][\\w.-]+/g," ").replace(/[^a-z0-9\\s]/g," ").split(/\\s+/).filter(w=>w.length>2&&!stop.has(w)));
+}
+function groupIncidents(posts) {
+  const candidates = posts.filter(p => p.classification !== "ruido");
+  const groups = [];
+  for (const post of candidates) {
+    const tokens = tokensFor(post);
+    let match = null;
+    for (const group of groups) {
+      if (group.category !== post.category) continue;
+      const other = group.tokens;
+      let overlap = 0;
+      for (const token of tokens) if (other.has(token)) overlap++;
+      const score = overlap / Math.max(1, Math.min(tokens.size, other.size));
+      const sameLink = post.url && group.posts.some(p => p.url === post.url);
+      if (sameLink || (score >= 0.72 && tokens.size >= 5)) { match = group; break; }
+    }
+    if (!match) groups.push({ category: post.category, tokens, posts: [post] });
+    else { match.posts.push(post); for (const token of tokens) match.tokens.add(token); }
+  }
+  return groups.map((g,i) => ({
+    id: "incident-" + (i+1), category: g.category, classification: g.posts.some(p=>p.classification==="sinal_tecnico") ? "sinal_tecnico" : g.posts[0].classification,
+    post_count: g.posts.length, sources: [...new Set(g.posts.map(p=>p.source))],
+    latest_at: g.posts.map(p=>p.created_at).filter(Boolean).sort().at(-1) || null,
+    title: (g.posts[0].text || "").slice(0,150), posts: g.posts
+  })).sort((a,b)=>b.post_count-a.post_count || String(b.latest_at).localeCompare(String(a.latest_at)));
+}
+
 async function getPosts(term) {
   const custom = String(term || "").trim().slice(0, 160), cacheKey = custom || "default";
   if (cache.value && cache.key === cacheKey && Date.now() - cache.at < CACHE_MS) return { ...cache.value, cached: true };
@@ -152,8 +209,18 @@ async function getPosts(term) {
   if (sources.YouTube.count) sources.YouTube.status = "ok";
   else if (YOUTUBE_API_KEY) sources.YouTube.status = "sem resultados ou indisponível";
   const unique = [...new Map(posts.filter(p => p.text).map(p => [p.id, p])).values()]
-    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)).slice(0, 100);
-  const value = { mode: "multi", posts: unique, result_count: unique.length, sources,
+    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)).slice(0, 100)
+    .map(classifyPost);
+  const incidents = groupIncidents(unique);
+  const value = { mode: "multi", posts: unique, incidents, result_count: unique.length,
+    incident_count: incidents.length,
+    classification_summary: {
+      em_verificacao: unique.filter(p=>p.classification==="em_verificacao").length,
+      sinal_tecnico: unique.filter(p=>p.classification==="sinal_tecnico").length,
+      programado: unique.filter(p=>p.classification==="programado").length,
+      rumor: unique.filter(p=>p.classification==="rumor").length,
+      ruido: unique.filter(p=>p.classification==="ruido").length
+    }, sources,
     warning: errors.length ? "Algumas consultas falharam. As fontes disponíveis continuam sendo exibidas." : "",
     note: "Monitoramento global experimental. Apenas conteúdo público e sinais técnicos disponíveis; YouTube e Cloudflare Radar exigem credenciais próprias. A cobertura varia por país, idioma e fonte.",
     updated_at: new Date().toISOString() };
