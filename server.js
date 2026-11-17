@@ -217,6 +217,7 @@ async function gdeltNews() {
     id: "gdelt-" + (item.url || item.url_mobile || item.title),
     source: "GDELT · Notícias globais",
     text: [item.title, item.domain ? "Veículo: " + item.domain : "", item.sourcecountry ? "País da fonte: " + item.sourcecountry : ""].filter(Boolean).join(" — "),
+    country_code: item.sourcecountry ? String(item.sourcecountry).toUpperCase() : null,
     created_at: item.seendate ? (item.seendate.length === 16 ? item.seendate.slice(0,4)+"-"+item.seendate.slice(4,6)+"-"+item.seendate.slice(6,8)+"T"+item.seendate.slice(9,11)+":"+item.seendate.slice(11,13)+":"+item.seendate.slice(13,15)+"Z" : null) : null,
     lang: item.language || "und", author: item.domain || "Veículo de notícias",
     url: item.url || item.url_mobile || "https://www.gdeltproject.org/", kind: "news_signal",
@@ -394,6 +395,21 @@ async function getPosts(term) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
   if (url.pathname === "/api/health") return send(res, 200, { ok: true, service: "X PULSE", sources: ["Bluesky", "Mastodon", "Reddit", "GDELT", "NWS", "USGS", "AWS", "Google Cloud", "Cloudflare Status", "GitHub Status", "Fastly", "DigitalOcean", "Atlassian", "OpenAI", "Discord", "Zoom", "Stripe", "Twilio", "npm", "GitLab", "YouTube", "Cloudflare Radar"] });
+  if (url.pathname === "/api/translate") {
+    try {
+      const text = String(url.searchParams.get("text") || "").slice(0, 450);
+      const source = String(url.searchParams.get("source") || "en").slice(0, 12);
+      const target = String(url.searchParams.get("target") || "pt").slice(0, 12);
+      if (!text.trim()) return send(res, 400, { error: "Texto obrigatório." });
+      const translationUrl = new URL("https://api.mymemory.translated.net/get");
+      translationUrl.searchParams.set("q", text);
+      translationUrl.searchParams.set("langpair", source + "|" + target);
+      const translated = await fetchJson(translationUrl.toString());
+      const translatedText = translated.responseData?.translatedText;
+      if (!translatedText || Number(translated.responseStatus) !== 200) return send(res, 502, { error: "Serviço de tradução indisponível ou limite gratuito atingido." });
+      return send(res, 200, { translatedText, source, target });
+    } catch (error) { return send(res, 502, { error: "Não foi possível traduzir agora. Tente novamente mais tarde." }); }
+  }
   if (url.pathname === "/api/posts") {
     try { return send(res, 200, await getPosts(url.searchParams.get("q"))); }
     catch (e) { return send(res, 502, { error: e.message || "Falha ao consultar fontes públicas" }); }
