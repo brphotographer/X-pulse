@@ -61,3 +61,11 @@
 .source-chip.offline{border-color:#583b42;color:#d9a4a4}
 .source-chip.offline i{background:#c46f78}
 @media(max-width:540px){.source-status-head{flex-direction:column;gap:3px}.source-chip{font-size:8px}}
+
+.date-filterline{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:12px}
+.date-filterline strong,.date-filterline label{color:var(--muted);font-size:10px;letter-spacing:1px;font-weight:750}
+.date-filterline input{background:#091525;border:1px solid #2a3d55;border-radius:8px;color:var(--text);padding:9px;font:inherit;color-scheme:dark;min-width:135px}
+.date-filterline button{background:transparent;border:1px solid #35516f;border-radius:8px;color:#a9c3dc;padding:9px 11px;font-size:11px;cursor:pointer}
+.date-filterline button:hover{border-color:var(--cyan);color:var(--cyan)}
+.date-filter-note{margin:7px 0 0;color:var(--muted);font-size:10px}
+@media(max-width:540px){.date-filterline{gap:7px}.date-filterline strong{width:100%}.date-filterline input{flex:1;min-width:120px}}
