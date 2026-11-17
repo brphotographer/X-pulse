@@ -1,6 +1,6 @@
 # X PULSE — Global Incident Intelligence
 
-Plataforma experimental de monitoramento global de sinais públicos relacionados a interrupções de energia, conectividade, telecomunicações e infraestrutura digital.
+Plataforma web experimental e instalável (PWA) para monitoramento global de sinais públicos relacionados a interrupções de energia, conectividade, telecomunicações e infraestrutura digital.
 
 ## Objetivo global
 - Monitorar publicações públicas em diferentes idiomas e regiões.
@@ -23,7 +23,7 @@ Plataforma experimental de monitoramento global de sinais públicos relacionados
 - Portais de notícias e feeds RSS locais.
 - Alertas, agrupamento de incidentes, deduplicação semântica e pontuação de confiança.
 
-## Executar localmente
+## Experiência de aplicativo (PWA)\n- Pode ser adicionada à tela inicial em navegadores compatíveis. No iPhone, abra no Safari, toque em Compartilhar e escolha “Adicionar à Tela de Início”.\n- O shell da interface pode abrir sem conexão após a primeira visita; consultas ao vivo, mapa e traduções continuam dependendo da internet.\n- Observações são armazenadas localmente no navegador do dispositivo e não são sincronizadas entre aparelhos.\n\n## Executar localmente
 - Node.js 18 ou superior.
 - Execute `npm start` e abra http://localhost:3000.
 
