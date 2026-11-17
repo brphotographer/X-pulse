@@ -2,19 +2,19 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#08111f"><meta name="description" content="Painel de monitoramento público de eventos e relatos em múltiplas redes.">
-  <title>X PULSE — Monitoramento Multirrede</title>
+  <meta name="theme-color" content="#08111f"><meta name="description" content="Global public-signal monitoring for infrastructure incidents, connectivity and service disruptions.">
+  <title>X PULSE — Global Incident Monitor</title>
   <link rel="preconnect" href="https://unpkg.com"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="/"><span class="brand-mark">X</span><span>X PULSE<small>PUBLIC SIGNAL MONITOR</small></span></a>
+    <a class="brand" href="/"><span class="brand-mark">X</span><span>X PULSE<small>GLOBAL SIGNAL INTELLIGENCE</small></span></a>
     <div class="top-status"><span class="pulse"></span><span id="connection">CONECTANDO</span><span class="utc" id="clock">--:--:-- UTC</span></div>
   </header>
   <main class="shell">
     <section class="intro">
-      <div><p class="eyebrow">PAINEL DE SITUAÇÃO · FONTES PÚBLICAS</p><h1>Monitoramento <span>multirrede</span></h1><p class="sub">Acompanhe publicações públicas do Bluesky, Mastodon e Reddit sobre energia, conectividade e possíveis interrupções de infraestrutura. O YouTube pode ser ativado com uma chave própria da API.</p></div>
+      <div><p class="eyebrow">GLOBAL SITUATION AWARENESS · PUBLIC SOURCES</p><h1>Monitoramento <span>global</span></h1><p class="sub">Acompanhe sinais públicos de diferentes países e idiomas sobre energia, conectividade e interrupções de infraestrutura. Fontes técnicas globais e novas redes são integradas gradualmente.</p></div>
       <div class="refresh-wrap"><span id="updated">Aguardando atualização</span><button id="refresh" class="button">↻ Atualizar</button></div>
     </section>
     <section class="metrics">
@@ -24,11 +24,11 @@
       <article class="metric"><span>STATUS DA FONTE</span><strong id="mode" class="status-value">MULTIRREDE</strong><small id="mode-note">Fontes públicas</small></article>
     </section>
     <section class="toolbar">
-      <label for="query">BUSCAR NAS FONTES DISPONÍVEIS</label><div class="searchline"><input id="query" placeholder="Ex.: apagão em São Paulo, sem internet, queda de energia" maxlength="450"><button id="search" class="button primary">Pesquisar</button></div>
-      <p class="hint">Busca pública no Bluesky, Mastodon e Reddit. YouTube requer chave própria da API. Nenhum login pessoal é utilizado.</p>
+      <label for="query">BUSCA GLOBAL NAS FONTES DISPONÍVEIS</label><div class="searchline"><input id="query" placeholder="Ex.: power outage in Tokyo, internet down in Paris, blackout" maxlength="450"><button id="search" class="button primary">Pesquisar</button></div>
+      <p class="hint">Busca multilíngue no Bluesky, Mastodon e Reddit. Fontes adicionais podem exigir credenciais próprias. Nenhum login pessoal é utilizado.</p>
     </section>
     <section class="content-grid">
-      <article class="panel map-panel"><div class="panel-head"><div><p class="eyebrow">VISÃO GEOGRÁFICA</p><h2>Mapa de ocorrências</h2></div><span class="tag">SEM GEOLOCALIZAÇÃO INVENTADA</span></div><div id="map"></div><p class="map-note">As redes consultadas não fornecem localização precisa e consistente em todas as publicações. Por segurança, este mapa não atribui locais com base em suposições.</p></article>
+      <article class="panel map-panel"><div class="panel-head"><div><p class="eyebrow">GLOBAL COVERAGE</p><h2>Mapa global de sinais</h2></div><span class="tag">SEM GEOLOCALIZAÇÃO INVENTADA</span></div><div id="map"></div><p class="map-note">As redes consultadas não fornecem localização precisa e consistente em todas as publicações. Por segurança, este mapa não atribui locais com base em suposições.</p></article>
       <article class="panel feed-panel"><div class="panel-head"><div><p class="eyebrow">FLUXO DE INFORMAÇÕES</p><h2>Relatos recentes</h2></div><span id="count-tag" class="tag">0 ITENS</span></div><div id="feed" class="feed"><div class="empty">Carregando relatos…</div></div></article>
     </section>
     <section class="panel observations">
@@ -36,7 +36,7 @@
       <div class="observation-form"><input id="obs-title" placeholder="Título da observação"><select id="obs-status"><option>Relato</option><option>Suspeita</option><option>Confirmado por fonte externa</option></select><textarea id="obs-body" placeholder="Descreva a região, horário, fonte e evidências verificáveis…"></textarea><button id="add-observation" class="button primary">＋ Registrar observação</button></div>
       <div id="observations" class="observations-list"><p class="empty">Nenhuma observação registrada nesta sessão.</p></div>
     </section>
-    <footer><span>X PULSE · Monitoramento multirrede experimental</span><span>Publicações públicas são relatos, não confirmação de incidentes. Confirme com operadores e autoridades.</span></footer>
+    <footer><span>X PULSE · Global incident intelligence (experimental)</span><span>Relatos públicos não confirmam incidentes. Verifique sinais técnicos e fontes oficiais antes de classificar uma ocorrência.</span></footer>
   </main>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="/app.js"></script>
 </body></html>
