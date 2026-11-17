@@ -14,22 +14,24 @@
   </header>
   <main class="shell">
     <section class="intro">
-      <div><p class="eyebrow">GLOBAL SITUATION AWARENESS · PUBLIC SOURCES</p><h1>Monitoramento <span>global</span></h1><p class="sub">Acompanhe sinais públicos de diferentes países e idiomas sobre energia, conectividade e interrupções de infraestrutura. Fontes técnicas globais e novas redes são integradas gradualmente.</p></div>
+      <div><p class="eyebrow">GLOBAL SITUATION AWARENESS · PUBLIC SOURCES</p><h1>Monitoramento <span>global</span></h1><p class="sub">Acompanhe sinais públicos de diferentes países e idiomas sobre energia, conectividade e interrupções de infraestrutura. Inclui energia, internet, bancos, plataformas digitais, telecomunicações e incidentes cibernéticos. Classificações automáticas são triagem, não confirmação.</p></div>
       <div class="refresh-wrap"><span id="updated">Aguardando atualização</span><button id="refresh" class="button">↻ Atualizar</button></div>
     </section>
     <section class="metrics">
       <article class="metric"><span>RELATOS NA CONSULTA</span><strong id="total">—</strong><small>Publicações públicas encontradas</small></article>
       <article class="metric"><span>CURTIDAS</span><strong id="likes">—</strong><small>Interações públicas disponíveis</small></article>
       <article class="metric"><span>REPOSTS</span><strong id="reposts">—</strong><small>Compartilhamentos públicos</small></article>
+      <article class="metric"><span>INCIDENTES / GRUPOS</span><strong id="incident-count">—</strong><small>Relatos não classificados como ruído</small></article>
       <article class="metric"><span>STATUS DA FONTE</span><strong id="mode" class="status-value">MULTIRREDE</strong><small id="mode-note">Fontes públicas</small></article>
     </section>
     <section class="toolbar">
       <label for="query">BUSCA GLOBAL NAS FONTES DISPONÍVEIS</label><div class="searchline"><input id="query" placeholder="Ex.: power outage in Tokyo, internet down in Paris, blackout" maxlength="450"><button id="search" class="button primary">Pesquisar</button></div>
+      <div class="filterline"><label for="classification-filter">FILTRAR CLASSIFICAÇÃO</label><select id="classification-filter"><option value="todos">Todas as publicações</option><option value="em_verificacao">Em verificação</option><option value="sinal_tecnico">Sinais técnicos</option><option value="programado">Programados</option><option value="rumor">Rumores / não confirmados</option><option value="ruido">Fora do escopo</option></select></div>
       <p class="hint">Busca multilíngue no Bluesky, Mastodon e Reddit. Fontes adicionais podem exigir credenciais próprias. Nenhum login pessoal é utilizado.</p>
     </section>
     <section class="content-grid">
       <article class="panel map-panel"><div class="panel-head"><div><p class="eyebrow">GLOBAL COVERAGE</p><h2>Mapa global de sinais</h2></div><span class="tag">SEM GEOLOCALIZAÇÃO INVENTADA</span></div><div id="map"></div><p class="map-note">As redes consultadas não fornecem localização precisa e consistente em todas as publicações. Por segurança, este mapa não atribui locais com base em suposições.</p></article>
-      <article class="panel feed-panel"><div class="panel-head"><div><p class="eyebrow">FLUXO DE INFORMAÇÕES</p><h2>Relatos recentes</h2></div><span id="count-tag" class="tag">0 ITENS</span></div><div id="feed" class="feed"><div class="empty">Carregando relatos…</div></div></article>
+      <article class="panel feed-panel"><div class="panel-head"><div><p class="eyebrow">FLUXO DE INFORMAÇÕES</p><h2>Relatos classificados</h2></div><span id="count-tag" class="tag">0 ITENS</span></div><div id="feed" class="feed"><div class="empty">Carregando relatos…</div></div></article>
     </section>
     <section class="panel observations">
       <div class="panel-head"><div><p class="eyebrow">REGISTRO OPERACIONAL</p><h2>Observações e evidências</h2></div><span class="tag">LOCAL · NESTE NAVEGADOR</span></div>
