@@ -17,13 +17,13 @@ function send(res, status, data, type="application/json; charset=utf-8") {
   res.end(type.startsWith("application/json") ? JSON.stringify(data) : data);
 }
 function cleanHtml(value = "") {
-  return String(value).replace(/<br\\s*\\/?\\s*>/gi, " ").replace(/<\\/(p|div|li)>/gi, " ")
+  return String(value).replace(/<br\s*\/?\s*>/gi, " ").replace(/<\/(p|div|li)>/gi, " ")
     .replace(/<[^>]*>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&")
     .replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/&quot;/gi, '"')
-    .replace(/&#39;|&#x27;/gi, "'").replace(/\\s+/g, " ").trim();
+    .replace(/&#39;|&#x27;/gi, "'").replace(/\s+/g, " ").trim();
 }
 function decodeXml(value = "") {
-  return String(value).replace(/<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>/g, "$1")
+  return String(value).replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
     .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"').replace(/&#39;|&#x27;/g, "'").trim();
 }
@@ -67,14 +67,14 @@ async function mastodonTag(tag) {
 async function redditSearch(term) {
   const url = "https://www.reddit.com/search.rss?q=" + encodeURIComponent(term) + "&sort=new&t=day&limit=15";
   const xml = await fetchText(url);
-  const blocks = xml.match(/<(?:entry|item)\\b[\\s\\S]*?<\\/(?:entry|item)>/gi) || [];
+  const blocks = xml.match(/<(?:entry|item)\b[\s\S]*?<\/(?:entry|item)>/gi) || [];
   return blocks.map((block, i) => {
     const title = xmlTag(block, "title"), content = xmlTag(block, "content") || xmlTag(block, "description");
     const linkMatch = block.match(/<link[^>]+href=["']([^"']+)["']/i);
     const link = linkMatch ? decodeXml(linkMatch[1]) : xmlTag(block, "link");
     const published = xmlTag(block, "published") || xmlTag(block, "pubDate");
     const author = xmlTag(block, "name") || xmlTag(block, "author");
-    const subreddit = (link.match(/reddit\\.com\\/r\\/([^/]+)/i) || [])[1];
+    const subreddit = (link.match(/reddit\.com\/r\/([^/]+)/i) || [])[1];
     return { id: "reddit-" + (link || i), source: "Reddit", text: cleanHtml(title + (content ? " — " + content : "")),
       created_at: published || null, lang: "und", author: subreddit ? "r/" + subreddit : (author || "Conta pública"),
       url: link, public_metrics: { like_count: 0, retweet_count: 0, reply_count: 0 } };
@@ -138,7 +138,7 @@ const server = http.createServer(async (req, res) => {
     try { return send(res, 200, await getPosts(url.searchParams.get("q"))); }
     catch (e) { return send(res, 502, { error: e.message || "Falha ao consultar fontes públicas" }); }
   }
-  const requested = url.pathname === "/" ? "index.html" : decodeURIComponent(url.pathname).replace(/^\\/+/, "");
+  const requested = url.pathname === "/" ? "index.html" : decodeURIComponent(url.pathname).replace(/^\/+/, "");
   const file = path.resolve(ROOT, requested);
   if (!file.startsWith(ROOT + path.sep)) return send(res, 403, "Forbidden", "text/plain");
   fs.readFile(file, (err, data) => {
