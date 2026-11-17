@@ -1,5 +1,5 @@
 const $ = (id) => document.getElementById(id);
-let map, markers, allPosts = [], allIncidents = [], activeFilter = "todos", activeStartDate = "", activeEndDate = "";
+let map, markers, allPosts = [], allIncidents = [], activeFilter = "todos", activeStartDate = "", activeEndDate = "", activeTimeRange = "";
 const labels = { em_verificacao:"Em verificação", sinal_tecnico:"Sinal técnico", programado:"Programado", rumor:"Rumor / não confirmado", ruido:"Fora do escopo" };
 const categories = { energia:"Energia", conectividade:"Conectividade", servicos_digitais:"Serviços digitais", ciberseguranca:"Cibersegurança", infraestrutura:"Infraestrutura" };
 function initMap(){
@@ -49,9 +49,21 @@ function localDateKey(value){
   return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
 }
 function matchesDate(post){
+  if(activeTimeRange){
+    const created=post.created_at?new Date(post.created_at).getTime():NaN;
+    if(!Number.isFinite(created))return false;
+    const durations={"1h":60*60*1000,"6h":6*60*60*1000,"12h":12*60*60*1000,"24h":24*60*60*1000,"7d":7*24*60*60*1000,"30d":30*24*60*60*1000};
+    return created>=Date.now()-durations[activeTimeRange]&&created<=Date.now();
+  }
   if(!activeStartDate&&!activeEndDate)return true;
   const key=localDateKey(post.created_at);if(!key)return false;
   return (!activeStartDate||key>=activeStartDate)&&(!activeEndDate||key<=activeEndDate);
+}
+function updateDatePresetButtons(){
+  document.querySelectorAll("[data-range]").forEach(button=>{
+    const active=button.dataset.range===activeTimeRange;
+    button.classList.toggle("active",active);button.setAttribute("aria-pressed",String(active));
+  });
 }
 function render(posts, incidents=allIncidents){
   allPosts=posts; allIncidents=incidents;
@@ -81,7 +93,8 @@ async function load(){
 function saveObservation(){const title=$("obs-title").value.trim(),body=$("obs-body").value.trim(),status=$("obs-status").value;if(!title||!body){alert("Preencha o título e a descrição.");return;}const el=document.createElement("article");el.className="observation";el.innerHTML='<strong>'+esc(title)+'</strong><span class="tag">'+esc(status.toUpperCase())+'</span><p>'+esc(body)+'</p><small>Registrado em '+new Date().toLocaleString("pt-BR")+'</small>';$("observations").querySelector(".empty")?.remove();$("observations").prepend(el);$("obs-title").value="";$("obs-body").value="";}
 initMap();time();setInterval(time,1000);$("refresh").addEventListener("click",load);$("search").addEventListener("click",load);$("query").addEventListener("keydown",e=>{if(e.key==="Enter")load();});$("add-observation").addEventListener("click",saveObservation);
 $("classification-filter").addEventListener("change",e=>{activeFilter=e.target.value;render(allPosts,allIncidents);});
-$("date-from").addEventListener("change",e=>{activeStartDate=e.target.value;if(activeEndDate&&activeStartDate>activeEndDate){activeEndDate=activeStartDate;$("date-to").value=activeEndDate;}render(allPosts,allIncidents);});
-$("date-to").addEventListener("change",e=>{activeEndDate=e.target.value;if(activeStartDate&&activeEndDate<activeStartDate){activeStartDate=activeEndDate;$("date-from").value=activeStartDate;}render(allPosts,allIncidents);});
-$("clear-date").addEventListener("click",()=>{activeStartDate="";activeEndDate="";$("date-from").value="";$("date-to").value="";render(allPosts,allIncidents);});
+$("date-from").addEventListener("change",e=>{activeTimeRange="";activeStartDate=e.target.value;if(activeEndDate&&activeStartDate>activeEndDate){activeEndDate=activeStartDate;$("date-to").value=activeEndDate;}updateDatePresetButtons();render(allPosts,allIncidents);});
+$("date-to").addEventListener("change",e=>{activeTimeRange="";activeEndDate=e.target.value;if(activeStartDate&&activeEndDate<activeStartDate){activeStartDate=activeEndDate;$("date-from").value=activeStartDate;}updateDatePresetButtons();render(allPosts,allIncidents);});
+document.querySelectorAll("[data-range]").forEach(button=>button.addEventListener("click",()=>{activeTimeRange=button.dataset.range;activeStartDate="";activeEndDate="";$("date-from").value="";$("date-to").value="";updateDatePresetButtons();render(allPosts,allIncidents);}));
+$("clear-date").addEventListener("click",()=>{activeStartDate="";activeEndDate="";activeTimeRange="";$("date-from").value="";$("date-to").value="";updateDatePresetButtons();render(allPosts,allIncidents);});
 load();setInterval(load,300000);
